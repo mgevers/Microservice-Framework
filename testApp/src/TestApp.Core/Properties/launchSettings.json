@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Common.TestApp.Core": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

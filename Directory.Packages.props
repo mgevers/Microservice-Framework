@@ -1,0 +1,81 @@
+<Project>
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageVersion Include="Ardalis.Result" Version="10.1.0" />
+		<PackageVersion Include="Ardalis.Result.AspNetCore" Version="10.1.0" />
+		<PackageVersion Include="coverlet.collector" Version="6.0.4" />
+		<PackageVersion Include="CSharpFunctionalExtensions" Version="3.4.3" />
+		<PackageVersion Include="CSharpFunctionalExtensions" Version="3.6.0" />
+		<PackageVersion Include="Elastic.Clients.Elasticsearch" Version="8.17.1" />
+		<PackageVersion Include="MassTransit" Version="8.3.6" />
+		<PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.3.6" />
+		<PackageVersion Include="MassTransit.Newtonsoft" Version="8.3.6" />
+		<PackageVersion Include="MassTransit.RabbitMQ" Version="8.3.6" />
+		<PackageVersion Include="MediatR" Version="12.4.1" />
+		<PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.13" />
+		<PackageVersion Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.13" />
+		<PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.13" />
+		<PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="8.0.13" />
+		<PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.13" />
+		<PackageVersion Include="Microsoft.AspNetCore.SignalR.Common" Version="8.0.13" />
+		<PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.47.1" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.13" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.13" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.13" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.13" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.2" />
+		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+		<PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+		<PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+		<PackageVersion Include="MongoDB.Driver" Version="3.2.1" />
+		<PackageVersion Include="Moq" Version="4.20.72" />
+		<PackageVersion Include="Moq.AutoMock" Version="3.5.0" />
+		<PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageVersion Include="NServiceBus" Version="9.2.6" />
+		<PackageVersion Include="NServiceBus.Callbacks" Version="5.0.2" />
+		<PackageVersion Include="NServiceBus.Extensions.Hosting" Version="3.0.1" />
+		<PackageVersion Include="NServiceBus.Newtonsoft.Json" Version="4.0.1" />
+		<PackageVersion Include="NServiceBus.Testing" Version="9.0.1" />
+		<PackageVersion Include="NServiceBus.Transport.AzureServiceBus" Version="4.2.4" />
+		<PackageVersion Include="OpenTelemetry.Exporter.Jaeger" Version="1.5.1" />
+		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.1" />
+		<PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.8.1" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.1" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.11" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.8.1" />
+		<PackageVersion Include="Polly" Version="8.5.2" />
+		<PackageVersion Include="Serilog.AspNetCore" Version="8.0.1" />
+		<PackageVersion Include="Serilog.Enrichers.AssemblyName" Version="2.0.0" />
+		<PackageVersion Include="Serilog.Enrichers.ClientInfo" Version="2.1.2" />
+		<PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+		<PackageVersion Include="Serilog.Expressions" Version="5.0.0" />
+		<PackageVersion Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+		<PackageVersion Include="Serilog.Sinks.ApplicationInsights" Version="4.0.0" />
+		<PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+		<PackageVersion Include="Serilog.Sinks.Datadog.Logs" Version="0.5.5" />
+		<PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.1.1" />
+		<PackageVersion Include="Serilog.Sinks.Seq" Version="6.0.0" />
+		<PackageVersion Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+		<PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="7.2.0" />
+		<PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="7.2.0" />
+		<PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.2.0" />
+		<PackageVersion Include="System.ClientModel" Version="1.3.0" />
+		<PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.5.0" />
+		<PackageVersion Include="System.Text.Json" Version="8.0.5" />
+		<PackageVersion Include="Testcontainers" Version="4.2.0" />
+		<PackageVersion Include="Testcontainers.CosmosDb" Version="4.2.0" />
+		<PackageVersion Include="Testcontainers.Elasticsearch" Version="4.2.0" />
+		<PackageVersion Include="Testcontainers.MsSql" Version="4.2.0" />
+		<PackageVersion Include="Testcontainers.RabbitMq" Version="4.2.0" />
+		<PackageVersion Include="xunit" Version="2.9.3" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
+	</ItemGroup>
+</Project>
