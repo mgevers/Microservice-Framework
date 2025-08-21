@@ -8,6 +8,8 @@ namespace Common.Testing.Web.Auth;
 
 public static class FakeJwtTokens
 {
+    public static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(20);
+
     private static readonly JwtSecurityTokenHandler _tokenHandler = new();
     private static readonly RandomNumberGenerator _rng = RandomNumberGenerator.Create();
     private static readonly byte[] _key = new byte[32];
@@ -27,7 +29,24 @@ public static class FakeJwtTokens
 
     public static string GenerateJwtToken(params Claim[] claims)
     {
-        var token = new JwtSecurityToken(Issuer, null, claims.Distinct(), null, CurrentTime.UtcNow.AddMinutes(20), SigningCredentials);
+        var token = new JwtSecurityToken(Issuer, null, claims, null, CurrentTime.UtcNow.Add(TokenLifetime), SigningCredentials);
+        var tokenString = _tokenHandler.WriteToken(token);
+
+        return tokenString;
+    }
+
+    public static string GenerateJwtToken(IReadOnlyCollection<string> roles, params Claim[] claims)
+    {
+        var roleClaims = roles
+            .Select(role => new Claim(ClaimTypes.Role, role))
+            .ToList();
+
+        var systemClaims = claims
+            .Concat(roleClaims)
+            .Distinct()
+            .ToList();
+
+        var token = new JwtSecurityToken(Issuer, null, systemClaims, null, CurrentTime.UtcNow.Add(TokenLifetime), SigningCredentials);
         var tokenString = _tokenHandler.WriteToken(token);
 
         return tokenString;

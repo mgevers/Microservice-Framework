@@ -1,7 +1,7 @@
-﻿using Common.Infrastructure.Auth.Token;
-using Common.LanguageExtensions;
+﻿using Common.LanguageExtensions;
 using Common.LanguageExtensions.TestableAlternatives;
 using Common.Testing.FluentTesting;
+using Common.Testing.Integration.Auth;
 using Common.Testing.Integration.FluentTesting;
 using Common.Testing.Persistence;
 using Common.Testing.Web.Auth;
@@ -42,20 +42,18 @@ public class ProbeApiTests : IClassFixture<TestAppWebApplicationFactory>
     public async Task CanAccessPrivateEndpointWithToken()
     {
         var mockNow = DateTime.Parse("1/1/2000");
-
         using (CurrentTime.UseMotckUtcNow(mockNow))
-        using (var fakeOauth = FakeOAuthManager.AssignsTokenWithClaims(new Claim("userId", "123")))
         {
-            var authToken = await fakeOauth.GetOAuth2Token(null!);
+            var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
             var probeResponse = new ProbeResponse(
             [
                 new("userId", "123"),
-                new("exp", $"{ConvertToUnixTimestamp(authToken!.Expires)}"),
+                new("exp", $"{ConvertToUnixTimestamp(mockNow.Add(FakeJwtTokens.TokenLifetime))}"),
                 new("iss", $"{FakeJwtTokens.Issuer}"),
             ]);
 
-            await Arrange(authToken)
+            await ArrangeWithToken(authToken)
                 .Act(httpClient => httpClient.GetAsync<ProbeResponse>("api/probe/private"))
                 .AssertDatabase(DatabaseState.Empty)
                 .AssertOutput(Result.Success(probeResponse));
@@ -65,36 +63,35 @@ public class ProbeApiTests : IClassFixture<TestAppWebApplicationFactory>
     [Fact]
     public async Task CanAccessPrivateEndpointWithApiKey()
     {
-        var apiKey = "test-api-key";
-        using var fakeOauth = FakeApiKeyAuthenticator.HydrateKeyWithClaims(apiKey, new Claim("userId", "123"));
+        var apiKey = FakeApiKeyAuthenticator.CreateKeyWithClaims(new Claim("userId", "123"));
 
         var probeResponse = new ProbeResponse(new List<ClaimView>()
         {
             new("userId", "123"),
         });
 
-        await Arrange(apiKey)
+        await ArrangeWithKey(apiKey)
             .Act(httpClient => httpClient.GetAsync<ProbeResponse>("api/probe/private"))
             .AssertDatabase(DatabaseState.Empty)
             .AssertOutput(Result.Success(probeResponse));
     }
 
-    private ApiTestSetup<TestAppWebApplicationFactory, Program> Arrange(string apiKey)
+    private ApiTestSetup<TestAppWebApplicationFactory, Program> Arrange()
     {
-        return new ApiTestSetup<TestAppWebApplicationFactory, Program>(
-            this.factory,
-            DatabaseState.Empty,
-            isReadOnlyDatabase: true,
-            apiKey);
+        return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithoutAuth(factory);
     }
 
-    private ApiTestSetup<TestAppWebApplicationFactory, Program> Arrange(OAuth2Token? oAuth2Token = null)
+    private ApiTestSetup<TestAppWebApplicationFactory, Program> ArrangeWithKey(string apiKey)
     {
-        return new ApiTestSetup<TestAppWebApplicationFactory, Program>(
-            this.factory,
-            DatabaseState.Empty,
-            isReadOnlyDatabase: true,
-            oAuth2Token);
+        return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithApiKey(factory, apiKey: apiKey);
+    }
+
+    private ApiTestSetup<TestAppWebApplicationFactory, Program> ArrangeWithToken(string? authToken = null)
+    {
+        return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithAuthToken(
+            factory,
+            authToken: authToken,
+            isReadOnlyDatabase: true);
     }
 
     private static double ConvertToUnixTimestamp(DateTime date)

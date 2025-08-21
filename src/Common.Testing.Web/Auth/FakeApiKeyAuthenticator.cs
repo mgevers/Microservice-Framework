@@ -1,46 +1,31 @@
 ﻿using Common.Infrastructure.Auth.ApiKey;
+using Common.Testing.Web.Auth;
 using Microsoft.AspNetCore.Authentication;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace Common.Testing.Web.Auth;
+namespace Common.Testing.Integration.Auth;
 
-public sealed class FakeApiKeyAuthenticator : IDisposable
+public sealed class FakeApiKeyAuthenticator
 {
-    private static readonly AsyncLocal<IReadOnlyList<Claim>?> _asyncLocalClaims = new();
-    private static readonly AsyncLocal<string?> _asyncLocalKey = new();
-    private static IReadOnlyList<Claim>? Claims => _asyncLocalClaims.Value;
-    private static string? Key => _asyncLocalKey.Value;
-
-    private FakeApiKeyAuthenticator(string key, IReadOnlyCollection<Claim> claims)
+    public static string CreateKeyWithClaims(params Claim[] claims)
     {
-        _asyncLocalClaims.Value = claims?.ToList() ?? Array.Empty<Claim>() as IReadOnlyList<Claim>;
-        _asyncLocalKey.Value = key;
+        return FakeJwtTokens.GenerateJwtToken(claims);
+    }
+    public static string CreateKeyWithClaims(IReadOnlyCollection<string> roles, params Claim[] claims)
+    {
+        return FakeJwtTokens.GenerateJwtToken(roles, claims);
     }
 
-    public static FakeApiKeyAuthenticator HydrateKeyWithClaims(string key, params Claim[] claims)
+    public static AuthenticationTicket GetAuthTicket(string fakeJwtToken)
     {
-        return new FakeApiKeyAuthenticator(key, claims);
-    }
+        var token = new JwtSecurityToken(fakeJwtToken);
+        var claims = token.Claims
+            .Where(claim => claim.Type != "exp" && claim.Type != "iss")
+            .ToList();
 
-    public static AuthenticationTicket GetAuthTicket(string key)
-    {
-        if (Key == null || Claims == null)
-        {
-            throw new ArgumentException("fake security manager was not properly initialized");
-        }
-
-        if (key != Key)
-        {
-            throw new ArgumentException($"key: '{key}' was not initialized");
-        }
-
-        var identity = new ClaimsIdentity(Claims, "ApiKey");
+        var identity = new ClaimsIdentity(claims, "ApiKey");
         var principal = new ClaimsPrincipal(identity);
         return new AuthenticationTicket(principal, ApiKeyAuthenticationHandler.ApiKeyAuthenticationScheme);
-    }
-
-    public void Dispose()
-    {
-        _asyncLocalClaims.Value = null;
     }
 }

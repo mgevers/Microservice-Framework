@@ -23,10 +23,10 @@ public static class WebApplicationFactoryTest
             testSetup.Factory.Server.PreserveExecutionContext = true;
             var httpClient = testSetup.Factory.CreateClient();
 
-            if (testSetup.OAuth2Token != null)
+            if (testSetup.AuthToken != null)
             {
                 httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue(testSetup.OAuth2Token.TokenType!, testSetup.OAuth2Token.AccessToken);
+                    new AuthenticationHeaderValue("Bearer", testSetup.AuthToken);
             }
             else if (testSetup.ApiKey != null)
             {

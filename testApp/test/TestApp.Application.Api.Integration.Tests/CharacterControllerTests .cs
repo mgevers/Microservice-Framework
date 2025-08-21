@@ -1,5 +1,4 @@
-﻿using Common.Infrastructure.Auth.Token;
-using Common.LanguageExtensions;
+﻿using Common.LanguageExtensions;
 using Common.Testing.FluentTesting;
 using Common.Testing.Integration.FluentTesting;
 using Common.Testing.Logging;
@@ -25,10 +24,10 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var character = DataModels.CreateCharacter();
         var request = new AddCharacterRequest(character.Id, character.Name);
 
-        using var fakeOauth = FakeOAuthManager.AssignsTokenWithClaims(new Claim("userId", "123"));
+        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
         await 
-            Arrange(oAuth2Token: await fakeOauth.GetOAuth2Token(null!))
+            Arrange(authToken: authToken)
             .Act(httpClient => httpClient.PostAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.OK)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
@@ -56,12 +55,12 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var character = DataModels.CreateCharacter();
         var request = new AddCharacterRequest(character.Id, character.Name);
 
-        using var fakeOauth = FakeOAuthManager.AssignsTokenWithClaims(new Claim("userId", "123"));
+        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
         await
             Arrange(
                 isReadOnlyDatabase: true,
-                oAuth2Token: await fakeOauth.GetOAuth2Token(null!))
+                authToken: authToken)
             .Act(httpClient => httpClient.PostAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.InternalServerError)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
@@ -77,12 +76,12 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var updatedCharacter = DataModels.CreateCharacter(id);
         var request = new UpdateCharacterRequest(id, updatedCharacter.Name);
 
-        using var fakeOauth = FakeOAuthManager.AssignsTokenWithClaims(new Claim("userId", "123"));
+        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
         await
             Arrange(
                 databaseState: new DatabaseState(character),
-                oAuth2Token: await fakeOauth.GetOAuth2Token(null!))
+                authToken: authToken)
             .Act(httpClient => httpClient.PutAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.OK)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
@@ -110,13 +109,13 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var character = DataModels.CreateCharacter();
         var request = new AddCharacterRequest(character.Id, character.Name);
 
-        using var fakeOauth = FakeOAuthManager.AssignsTokenWithClaims(new Claim("userId", "123"));
+        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
         await
             Arrange(
                 databaseState: new DatabaseState(character),
                 isReadOnlyDatabase: true,
-                oAuth2Token: await fakeOauth.GetOAuth2Token(null!))
+                authToken: authToken)
             .Act(httpClient => httpClient.PutAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.InternalServerError)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
@@ -130,12 +129,12 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var character = DataModels.CreateCharacter();
         var request = new RemoveCharacterRequest(character.Id);
 
-        using var fakeOauth = FakeOAuthManager.AssignsTokenWithClaims(new Claim("userId", "123"));
+        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
         await
             Arrange(
                 databaseState: new DatabaseState(character),
-                oAuth2Token: await fakeOauth.GetOAuth2Token(null!))
+                authToken: authToken)
             .Act(httpClient => httpClient.DeleteAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.OK)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
@@ -163,13 +162,13 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var character = DataModels.CreateCharacter();
         var request = new RemoveCharacterRequest(character.Id);
 
-        using var fakeOauth = FakeOAuthManager.AssignsTokenWithClaims(new Claim("userId", "123"));
+        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
         await
             Arrange(
                 databaseState: new DatabaseState(character),
                 isReadOnlyDatabase: true,
-                oAuth2Token: await fakeOauth.GetOAuth2Token(null!))
+                authToken: authToken)
             .Act(httpClient => httpClient.DeleteAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.InternalServerError)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
@@ -179,13 +178,13 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
 
     private ApiTestSetup<TestAppWebApplicationFactory, Program> Arrange(
         DatabaseState? databaseState = null,
-        bool isReadOnlyDatabase = false,
-        OAuth2Token? oAuth2Token = null)
+        string? authToken = null,
+        bool isReadOnlyDatabase = false)
     {
-        return new ApiTestSetup<TestAppWebApplicationFactory, Program>(
-            this.factory,
-            databaseState ?? DatabaseState.Empty,
-            isReadOnlyDatabase,
-            oAuth2Token);
+        return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithAuthToken(
+            factory,
+            databaseState: databaseState,
+            authToken: authToken,
+            isReadOnlyDatabase: isReadOnlyDatabase);
     }
 }
