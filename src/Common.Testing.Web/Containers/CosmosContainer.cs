@@ -15,7 +15,7 @@ public class CosmosContainer : IAsyncLifetime
         .WithCommand("--protocol", "https", "--enable-explorer", "true")
         .WithWaitStrategy(Wait
             .ForUnixContainer()
-            .UntilPortIsAvailable(8081)
+            //.UntilPortIsAvailable(8081)
         )
         .Build();
 
