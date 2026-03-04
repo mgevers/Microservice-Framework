@@ -1,5 +1,5 @@
 ﻿using Ardalis.Result;
-using Common.Infrastructure.Persistence;
+using Common.LanguageExtensions.Contracts;
 
 namespace Common.Testing.Persistence;
 

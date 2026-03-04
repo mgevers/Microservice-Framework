@@ -1,5 +1,5 @@
-﻿using Common.Infrastructure.Persistence;
-using Common.Infrastructure.Persistence.Elasticsearch;
+﻿using Common.Infrastructure.Persistence.Elasticsearch;
+using Common.LanguageExtensions.Contracts;
 using Common.Testing.Assert;
 using Common.Testing.Integration.Containers;
 using Elastic.Clients.Elasticsearch;

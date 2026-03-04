@@ -1,4 +1,5 @@
 ﻿using Ardalis.Result;
+using Common.LanguageExtensions.Contracts;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using Polly;

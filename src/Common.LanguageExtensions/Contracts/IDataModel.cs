@@ -1,4 +1,4 @@
-﻿namespace Common.Infrastructure.Persistence;
+﻿namespace Common.LanguageExtensions.Contracts;
 
 public interface IDataModel : IDataModel<Guid> { }
 

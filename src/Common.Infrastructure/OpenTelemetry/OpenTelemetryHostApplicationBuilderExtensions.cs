@@ -12,29 +12,37 @@ public static class OpenTelemetryHostApplicationBuilderExtensions
 {
     public static IHostApplicationBuilder ConfigureOpenTelemetry(this IHostApplicationBuilder builder, string serviceName)
     {
-        builder.Logging.AddOpenTelemetry(config =>
-        {
-            config.IncludeScopes = true;
-            config.IncludeFormattedMessage = true;
-        });
+        var resourceBuilder = ResourceBuilder.CreateDefault()
+            .AddService(serviceName, serviceInstanceId: Environment.MachineName)
+            .AddTelemetrySdk()
+            .AddEnvironmentVariableDetector();
+
+        var excludedPaths = new[] { "/health", "/metrics", "/swagger" };
 
         builder.Services
             .AddOpenTelemetry()
             .WithMetrics(meterBuilder => {
-                meterBuilder.AddAspNetCoreInstrumentation();
-                meterBuilder.AddHttpClientInstrumentation();
+                meterBuilder
+                    .SetResourceBuilder(resourceBuilder)
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation();
             })
             .WithTracing(tracingBuilder =>
             {
-                var resourceBuilder = ResourceBuilder.CreateDefault()
-                    .AddService(serviceName)
-                    .AddTelemetrySdk()
-                    .AddEnvironmentVariableDetector();
-
                 tracingBuilder
                     .SetResourceBuilder(resourceBuilder)
                     .AddSource("MassTransit")
-                    .AddAspNetCoreInstrumentation()
+                    .AddAspNetCoreInstrumentation(options =>
+                    {
+                        options.Filter = httpContext =>
+                        {
+                            var path = httpContext.Request.Path.Value;
+                            return !excludedPaths.Any(excludedPath =>
+                            {
+                                return path?.StartsWith(excludedPath, StringComparison.OrdinalIgnoreCase) == true;
+                            });
+                        };
+                    })
                     .AddHttpClientInstrumentation()
                     .AddEntityFrameworkCoreInstrumentation();
             });

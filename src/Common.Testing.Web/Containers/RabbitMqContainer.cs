@@ -7,7 +7,7 @@ namespace Common.Testing.Integration.Containers;
 
 public class RabbitMqContainer : IAsyncLifetime
 {
-    public Testcontainers.RabbitMq.RabbitMqContainer Container { get; } = new RabbitMqBuilder()
+    public Testcontainers.RabbitMq.RabbitMqContainer Container { get; } = new RabbitMqBuilder("rabbitmq:3.11")
         .WithUsername("guest")
         .WithPassword("guest")
         .Build();

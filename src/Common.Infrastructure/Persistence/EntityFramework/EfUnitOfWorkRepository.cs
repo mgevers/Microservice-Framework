@@ -1,5 +1,7 @@
 ﻿using Ardalis.Result;
+using Common.LanguageExtensions.Contracts;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Common.Infrastructure.Persistence.EntityFramework;
 
@@ -12,44 +14,89 @@ public class EFUnitOfWorkRepository : IUnitOfWorkRepository
         this.dbContext = dbContext;
     }
 
-    async Task<Result<TEntity>> IUnitOfWorkRepository.FindById<TEntity>(Guid key, CancellationToken cancellationToken)
+    public async Task<Result<IReadOnlyList<TEntity>>> LoadAll<TEntity>(int count = 1_000, CancellationToken cancellationToken = default)
+        where TEntity : class, IDataModel
     {
         var entity = await this.dbContext.Set<TEntity>()
-            .SingleOrDefaultAsync(p => key!.Equals(p.Id), cancellationToken);
+            .ToListAsync(cancellationToken);
 
         return entity == null
-            ? Result<TEntity>.NotFound($"entity with id '{key}' not found")
+            ? Result<IReadOnlyList<TEntity>>.NotFound($"entity with id not found")
+            : Result.Success<IReadOnlyList<TEntity>>(entity);
+    }
+
+    public async Task<Result<TEntity>> LoadById<TEntity>(Guid id, CancellationToken cancellationToken = default)
+        where TEntity : class, IDataModel
+    {
+        var entity = await this.dbContext.Set<TEntity>()
+            .SingleOrDefaultAsync(p => id!.Equals(p.Id), cancellationToken);
+
+        return entity == null
+            ? Result<TEntity>.NotFound($"entity with id '{id}' not found")
             : Result.Success(entity);
+    }
+
+    public async Task<Result<IReadOnlyList<TEntity>>> LoadByIds<TEntity>(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default) 
+        where TEntity : class, IDataModel
+    {
+        var entities = await this.dbContext.Set<TEntity>()
+            .Where(entity => ids.Contains(entity.Id))
+            .ToListAsync(cancellationToken);
+
+        return entities == null
+            ? Result<IReadOnlyList<TEntity>>.NotFound($"entity with id not found")
+            : Result.Success<IReadOnlyList<TEntity>>(entities);
+    }
+
+    async Task<Result<IReadOnlyList<TEntity>>> IReadOnlyRepository.Query<TEntity>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)
+    {
+        var entities = await this.dbContext.Set<TEntity>()
+            .Where(queryFunc)
+            .ToListAsync(cancellationToken);
+
+        return entities == null
+            ? Result<IReadOnlyList<TEntity>>.NotFound($"entity with id not found")
+            : Result.Success<IReadOnlyList<TEntity>>(entities);
+    }
+
+    async Task<Result<TEntity>> IReadOnlyRepository.Find<TEntity>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)
+    {
+        var entity = await this.dbContext.Set<TEntity>()
+            .SingleOrDefaultAsync(queryFunc, cancellationToken);
+
+        return entity == null
+            ? Result<TEntity>.NotFound($"entity not found")
+            : Result.Success<TEntity>(entity);
     }
 
     void IUnitOfWorkRepository.Add<TEntity>(TEntity entity)
     {
-        dbContext.Add(entity);
+        this.dbContext.Add(entity);
     }
 
     void IUnitOfWorkRepository.AddMany<TEntity>(IReadOnlyCollection<TEntity> entities)
     {
-        dbContext.AddRange(entities);
-    }
-
-    void IUnitOfWorkRepository.Remove<TEntity>(TEntity entity)
-    {
-        dbContext.Remove(entity);
-    }
-
-    void IUnitOfWorkRepository.RemoveMany<TEntity>(IReadOnlyCollection<TEntity> entities)
-    {
-        dbContext.RemoveRange(entities);
+        this.dbContext.AddRange(entities);
     }
 
     void IUnitOfWorkRepository.Update<TEntity>(TEntity entity)
     {
-        dbContext.Update(entity);
+        this.dbContext.Update(entity);
     }
 
     void IUnitOfWorkRepository.UpdateMany<TEntity>(IReadOnlyCollection<TEntity> entities)
     {
-        dbContext.UpdateRange(entities);
+        this.dbContext.UpdateRange(entities);
+    }
+
+    void IUnitOfWorkRepository.Remove<TEntity>(TEntity entity)
+    {
+        this.dbContext.Remove(entity);
+    }
+
+    void IUnitOfWorkRepository.RemoveMany<TEntity>(IReadOnlyCollection<TEntity> entities)
+    {
+        this.dbContext.RemoveRange(entities);
     }
 
     public async Task<Result> CommitTransaction(CancellationToken cancellation = default)

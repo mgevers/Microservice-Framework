@@ -1,4 +1,5 @@
 ﻿using Ardalis.Result;
+using Common.LanguageExtensions.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Common.Infrastructure.Persistence.EntityFramework;

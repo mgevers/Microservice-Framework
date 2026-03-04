@@ -1,4 +1,4 @@
-﻿using Common.Infrastructure.Persistence;
+﻿using Common.LanguageExtensions.Contracts;
 using Common.Testing.FluentTesting;
 using Common.Testing.Logging;
 using Common.Testing.Persistence;

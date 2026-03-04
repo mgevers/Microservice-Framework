@@ -1,20 +1,19 @@
-﻿using Common.Infrastructure.OpenTelemetry.Enrichers;
+﻿using Common.Infrastructure.OpenTelemetry;
+using Common.Infrastructure.OpenTelemetry.Enrichers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Serilog;
+using System.Reflection;
 
 namespace Common.Infrastructure;
 
 public static class WebApi
 {
-    public static IHostApplicationBuilder AddCommonConfiguration(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddCommonConfiguration(this WebApplicationBuilder builder, string? serviceName = null)
     {
-        builder.Host.UseSerilog((context, config) =>
-        {
-            config.ReadFrom.Configuration(context.Configuration);
-        });
+        builder.UseSerilog(serviceName ?? Assembly.GetExecutingAssembly().FullName!);
 
         builder.Services
             .AddLogging()

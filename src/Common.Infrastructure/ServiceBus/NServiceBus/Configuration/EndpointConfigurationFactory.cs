@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using NServiceBus.Transport;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using NServiceBus.Settings;
 
 namespace Common.Infrastructure.ServiceBus.NServiceBus.Configuration;
 
@@ -79,12 +80,13 @@ public static class EndpointConfigurationFactory
         NServiceBusOptions nServiceBusSettings,
         Action<TransportExtensions<AzureServiceBusTransport>>? configureTransportDelegate)
     {
-        var transport = configuration
-            .UseTransport<AzureServiceBusTransport>()
-            .ConnectionString(nServiceBusSettings.AzureConnectionString)
-            .SubscriptionRuleNamingConvention(NServiceBusNameShortener.Shorten);
+        // this part might be totally broken
+        var transport = new AzureServiceBusTransport(nServiceBusSettings.AzureConnectionString!, TopicTopology.Default);
+        var routingSettins = new RoutingSettings<AzureServiceBusTransport>(new SettingsHolder());
+        var transportExtension = new TransportExtensions<AzureServiceBusTransport>(transport, routingSettins);
+        configuration.UseTransport(transport);
 
-        configureTransportDelegate?.Invoke(transport);
+        configureTransportDelegate?.Invoke(transportExtension);
     }
 
     private static void ConfigureLearningTransport(

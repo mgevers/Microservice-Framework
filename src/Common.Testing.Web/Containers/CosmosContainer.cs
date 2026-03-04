@@ -9,8 +9,7 @@ namespace Common.Testing.Integration.Containers;
 
 public class CosmosContainer : IAsyncLifetime
 {
-    public CosmosDbContainer CosmosDbContainer { get; } = new CosmosDbBuilder()
-        .WithImage("mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview")
+    public CosmosDbContainer CosmosDbContainer { get; } = new CosmosDbBuilder("mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview")
         .WithEnvironment("AZURE_COSMOS_EMULATOR_PARTITION_COUNT", "10")
         .WithCommand("--protocol", "https", "--enable-explorer", "true")
         .WithWaitStrategy(Wait

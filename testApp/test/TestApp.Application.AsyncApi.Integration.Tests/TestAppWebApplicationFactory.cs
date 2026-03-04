@@ -1,4 +1,4 @@
-﻿using Common.Infrastructure.Persistence;
+﻿using Common.LanguageExtensions.Contracts;
 using Common.Testing.Persistence;
 using Common.Testing.ServiceBus;
 using Common.Testing.Web;

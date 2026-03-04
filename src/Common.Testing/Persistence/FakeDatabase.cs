@@ -1,5 +1,5 @@
 ﻿using Ardalis.Result;
-using Common.Infrastructure.Persistence;
+using Common.LanguageExtensions.Contracts;
 using System.Linq.Expressions;
 
 namespace Common.Testing.Persistence;

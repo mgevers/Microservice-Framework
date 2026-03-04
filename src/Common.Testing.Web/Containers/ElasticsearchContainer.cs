@@ -7,8 +7,7 @@ namespace Common.Testing.Integration.Containers;
 
 public class ElasticsearchContainer : IAsyncLifetime
 {
-    public Testcontainers.Elasticsearch.ElasticsearchContainer Container { get; } = new ElasticsearchBuilder()
-        .WithImage("elasticsearch:8.17.2")
+    public Testcontainers.Elasticsearch.ElasticsearchContainer Container { get; } = new ElasticsearchBuilder("elasticsearch:8.17.2")
         .WithPortBinding(9200, true)
         .WithEnvironment("discovery.type", "single-node")
         .WithEnvironment("xpack.security.enabled", "false")

@@ -1,5 +1,5 @@
 ﻿using Ardalis.Result;
-using Common.Infrastructure.Persistence;
+using Common.LanguageExtensions.Contracts;
 using Common.LanguageExtensions.Utilities;
 using MediatR;
 using Microsoft.Extensions.Logging;

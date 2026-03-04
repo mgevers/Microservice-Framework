@@ -61,6 +61,26 @@ public class ProbeApiTests : IClassFixture<TestAppWebApplicationFactory>
     }
 
     [Fact]
+    public async Task AccessPrivateEndpoint_WithExpiredToken_Fails()
+    {
+        var mockNow = DateTime.Parse("1/1/2000");
+        var mockExpiredTime = mockNow.Add(FakeJwtTokens.TokenLifetime.Add(TimeSpan.FromMinutes(1)));
+
+        var authToken = string.Empty;
+        using (CurrentTime.UseMotckUtcNow(mockNow))
+        {
+            authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
+        }
+
+        using (CurrentTime.UseMotckUtcNow(mockExpiredTime))
+        {
+            await ArrangeWithToken(authToken)
+                .Act(httpClient => httpClient.GetAsync<ProbeResponse>("api/probe/private"))
+                .AssertOutput(Result.Failure<ProbeResponse>("http response was not a successful status code - Unauthorized"));
+        }
+    }
+
+    [Fact]
     public async Task CanAccessPrivateEndpointWithApiKey()
     {
         var apiKey = FakeApiKeyAuthenticator.CreateKeyWithClaims(new Claim("userId", "123"));

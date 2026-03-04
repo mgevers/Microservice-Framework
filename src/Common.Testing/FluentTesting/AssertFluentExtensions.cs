@@ -176,6 +176,7 @@ public static class AssertFluentExtensions
         return result;
     }
 
+
     private static void AssertMessages(
         IReadOnlyCollection<object> expectedMessages,
         IReadOnlyCollection<object> actualMessages)

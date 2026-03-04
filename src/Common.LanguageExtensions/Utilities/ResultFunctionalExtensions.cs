@@ -1,4 +1,5 @@
 ﻿using Ardalis.Result;
+using static CSharpFunctionalExtensions.Result;
 
 namespace Common.LanguageExtensions.Utilities;
 
@@ -98,6 +99,27 @@ public static class ResultFunctionalExtensions
         }
 
         return Result.Success(new KeyValuePair<T, K>(result1.Value, result2.Value));
+    }
+
+    public static Result Combine(this IEnumerable<Result> results, string? errorMessagesSeparator = null)
+    {
+        var failedResults = results.Where(x => !x.IsSuccess).ToList();
+
+        if (failedResults.Count == 0)
+        {
+            return Result.Success();
+        }
+
+        if (failedResults.Count == 1)
+        {
+            return failedResults.Single();
+        }
+
+        string errorMessage = string.Join(
+            errorMessagesSeparator ?? Configuration.ErrorMessagesSeparator,
+            AggregateMessages(failedResults.SelectMany(x => x.Errors)));
+        
+        return Result.CriticalError(errorMessage);
     }
 
     public static Result<K> Map<T, K>(this Result<T> result, Func<T, Result<K>> action)
@@ -223,6 +245,30 @@ public static class ResultFunctionalExtensions
         return result;
     }
 
+    public static async Task<Result<T>> OnFailureCompensate<T>(this Task<Result<T>> resultTask, Func<Result<T>, T> func)
+    {
+        var result = await resultTask;
+
+        if (!result.IsSuccess)
+        {
+            return Result.Success(func(result));
+        }
+
+        return result;
+    }
+
+    public static async Task<Result<T>> OnFailureCompensate<T>(this Task<Result<T>> resultTask, Func<Result<T>, Task<T>> func)
+    {
+        var result = await resultTask;
+
+        if (!result.IsSuccess)
+        {
+            return Result.Success(await func(result));
+        }
+
+        return result;
+    }
+
     public static Result Bind(this Result result, Func<Result> func)
     {
         if (!result.IsSuccess)
@@ -323,5 +369,21 @@ public static class ResultFunctionalExtensions
         }
 
         return Result.CriticalError([.. result.Errors]);
+    }
+
+    private static IEnumerable<string> AggregateMessages(IEnumerable<string> messages)
+    {
+        var dict = new Dictionary<string, int>();
+        foreach (var message in messages)
+        {
+            if (!dict.ContainsKey(message))
+            {
+                dict.Add(message, 0);
+            }
+
+            dict[message]++;
+        }
+
+        return dict.Select(x => x.Value == 1 ? x.Key : $"{x.Key} ({x.Value}×)");
     }
 }
