@@ -36,12 +36,12 @@ public static class FakeAuthenticationServiceCollectionExtensions
                 options.Configuration = config;
                 options.TimeProvider = new FakeTimeProvider();
             })
-            .AddSingleton<JwtBearerHandler, FakeJwtBearerHandler>();
+            .AddScoped<JwtBearerHandler, FakeJwtBearerHandler>();
     }
 
     public static IServiceCollection ConfigureFakeApiKeys(this IServiceCollection services)
     {
-        return services.AddSingleton<IApiKeySecurityManager, FakeApiKeySecurityManager>();
+        return services.AddScoped<IApiKeySecurityManager, FakeApiKeySecurityManager>();
     }
 
     private class FakeJwtBearerHandler(
