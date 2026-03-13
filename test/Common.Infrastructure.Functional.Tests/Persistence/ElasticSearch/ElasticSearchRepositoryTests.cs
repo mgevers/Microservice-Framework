@@ -132,20 +132,25 @@ public class ElasticSearchRepositoryTests : IClassFixture<ElasticsearchContainer
     private static async Task EnsureIndexCreated(ElasticsearchClient client)
     {
         var indexName = "person";
-        var getRequest = new GetIndexRequest(indexName);
-        var getResponse = await client.Indices.GetAsync(getRequest);
 
-        if (getResponse.Indices.Keys.Contains(indexName))
+        // Check if index exists
+        var existsResponse = await client.Indices.ExistsAsync(indexName);
+
+        if (existsResponse.Exists)
         {
             return;
         }
 
-        var request = new CreateIndexRequestDescriptor<Person>("person");
+        // Create the index
+        var request = new CreateIndexRequestDescriptor<Person>(indexName);
         var response = await client.Indices.CreateAsync(request);
 
         if (response.IsSuccess() == false)
         {
-            throw new Exception("can't create index");
+            var errorMessage = response.TryGetOriginalException(out var ex)
+                ? ex.Message
+                : response.DebugInformation ?? "Unknown error creating index";
+            throw new Exception($"Can't create index '{indexName}': {errorMessage}");
         }
     }
 
