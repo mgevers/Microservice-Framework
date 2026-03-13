@@ -1,9 +1,9 @@
 ﻿using Common.LanguageExtensions;
-using Common.Testing.FluentTesting;
 using Common.Testing.Integration.FluentTesting;
 using Common.Testing.Persistence;
 using Common.Testing.Web.Auth;
 using Common.Testing.Web.FluentTesting;
+using Common.Testing.FluentTesting.Asserts;
 using System.Net;
 using System.Security.Claims;
 using TestApp.Core.Boundary;

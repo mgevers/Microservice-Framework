@@ -1,6 +1,7 @@
 ﻿using Common.Infrastructure.ServiceBus.NServiceBus.RequestResponse;
 using Common.Infrastructure.Tests.ServiceBus.Utilities;
 using Common.Testing.FluentTesting;
+using Common.Testing.FluentTesting.Asserts;
 using Common.Testing.Persistence;
 using CSharpFunctionalExtensions;
 using Xunit;

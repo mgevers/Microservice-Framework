@@ -1,6 +1,6 @@
 ﻿using Common.LanguageExtensions;
 using Common.LanguageExtensions.TestableAlternatives;
-using Common.Testing.FluentTesting;
+using Common.Testing.FluentTesting.Asserts;
 using Common.Testing.Integration.Auth;
 using Common.Testing.Integration.FluentTesting;
 using Common.Testing.Persistence;

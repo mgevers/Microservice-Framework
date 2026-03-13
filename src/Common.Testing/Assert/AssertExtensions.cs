@@ -1,4 +1,5 @@
-﻿using Common.Testing.Persistence;
+﻿using Common.LanguageExtensions.Utilities;
+using Common.Testing.Persistence;
 using CSharpFunctionalExtensions;
 using NServiceBus.Testing;
 using System.Linq.Expressions;
@@ -44,43 +45,6 @@ public static class AssertExtensions
             includeNonPublicProperties: includeNonPublicProperties);
 
         Xunit.Assert.Equal(expected: expectedJson, actual: actualJson);
-    }
-
-    public static bool IsDeepEqual<T>(
-        T expected,
-        T actual,
-        bool includeNonPublicProperties = false)
-    {
-        string expectedJson = DeepEqualSerializer.SerializeObject(
-            value: expected,
-            blacklistProperties: [],
-            includeNonPublicProperties: includeNonPublicProperties);
-
-        string actualJson = DeepEqualSerializer.SerializeObject(
-            value: actual,
-            blacklistProperties: [],
-            includeNonPublicProperties: includeNonPublicProperties);
-
-        return expectedJson == actualJson;
-    }
-
-    public static bool IsDeepEqualWithBlacklist<T>(
-        T expected,
-        T actual,
-        bool includeNonPublicProperties,
-        params Expression<Func<T, object>>[] blacklistProperties)
-    {
-        string expectedJson = DeepEqualSerializer.SerializeObject(
-            value: expected,
-            blacklistProperties: blacklistProperties,
-            includeNonPublicProperties: includeNonPublicProperties);
-
-        string actualJson = DeepEqualSerializer.SerializeObject(
-            value: actual,
-            blacklistProperties: blacklistProperties,
-            includeNonPublicProperties: includeNonPublicProperties);
-
-        return expectedJson == actualJson;
     }
 
     public static void EqualResults<T>(Result<T> expected, Result<T> actual)

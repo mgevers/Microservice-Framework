@@ -1,5 +1,5 @@
 ﻿using Common.LanguageExtensions;
-using Common.Testing.FluentTesting;
+using Common.Testing.FluentTesting.Asserts;
 using Common.Testing.Integration.FluentTesting;
 using Common.Testing.Logging;
 using Common.Testing.Persistence;

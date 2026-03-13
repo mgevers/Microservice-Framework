@@ -1,6 +1,7 @@
 ﻿using Ardalis.Result;
 using Common.LanguageExtensions.Contracts;
 using Common.Testing.FluentTesting;
+using Common.Testing.FluentTesting.Asserts;
 using Common.Testing.Logging;
 using Common.Testing.Persistence;
 using Microsoft.Extensions.Logging;
