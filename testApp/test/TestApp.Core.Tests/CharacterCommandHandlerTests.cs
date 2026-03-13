@@ -21,7 +21,7 @@ public class CharacterCommandHandlerTests
 
         await Arrange<AddCharacterCommandHandler>(DatabaseState.Empty)
             .Handle(new AddCharacterCommand(character.Id, character.Name))
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterCommand)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterCommand)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertPublishedEvent(new CharacterAddedEvent(character.Id));
     }
@@ -35,7 +35,7 @@ public class CharacterCommandHandlerTests
                 databaseState: DatabaseState.Empty,
                 isReadOnlyDatabase: true)
             .Handle(new AddCharacterCommand(character.Id, character.Name))
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterCommand)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterCommand)}"))
             .AssertDatabase(DatabaseState.Empty)
             .AssertNoPublishedEvents();
     }
@@ -49,7 +49,7 @@ public class CharacterCommandHandlerTests
 
         await Arrange<UpdateCharacterCommandHandler>(new DatabaseState(character))
             .Handle(new UpdateCharacterCommand(id, updatedCharacter.Name))
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterCommand)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterCommand)}"))
             .AssertDatabase(new DatabaseState(updatedCharacter))
             .AssertPublishedEvent(new CharacterUpdatedEvent(id));
     }
@@ -63,7 +63,7 @@ public class CharacterCommandHandlerTests
                 databaseState: new DatabaseState(character),
                 isReadOnlyDatabase: true)
             .Handle(new UpdateCharacterCommand(character.Id, "new name"))
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterCommand)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterCommand)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertNoPublishedEvents();
     }
@@ -75,7 +75,7 @@ public class CharacterCommandHandlerTests
 
         await Arrange<RemoveCharacterCommandHandler>(new DatabaseState(character))
             .Handle(new RemoveCharacterCommand(character.Id))
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterCommand)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterCommand)}"))
             .AssertDatabase(DatabaseState.Empty)
             .AssertPublishedEvent(new CharacterRemovedEvent(character.Id));
     }
@@ -89,18 +89,21 @@ public class CharacterCommandHandlerTests
                 databaseState: new DatabaseState(character),
                 isReadOnlyDatabase: true)
             .Handle(new RemoveCharacterCommand(character.Id))
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterCommand)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterCommand)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertNoPublishedEvents();
     }
 
     public static HandlerTestSetup<THandler> Arrange<THandler>(DatabaseState databaseState, bool isReadOnlyDatabase = false)
     {
-        return new HandlerTestSetup<THandler>(databaseState, isReadOnlyDatabase, ConfigureMocker);
+        return new HandlerTestSetup<THandler>(databaseState, isReadOnlyDatabase, configureMocker: ConfigureMocker);
     }
 
     private static void ConfigureMocker(AutoMocker mocker)
     {
         mocker.Use<IRepository<Character>>(new FakeRepository<Character>());
+        mocker.Use<ILogger<AddCharacterCommandHandler>>(new FakeLogger<AddCharacterCommandHandler>(nameof(AddCharacterCommandHandler)));
+        mocker.Use<ILogger<RemoveCharacterCommandHandler>>(new FakeLogger<RemoveCharacterCommandHandler>(nameof(RemoveCharacterCommandHandler)));
+        mocker.Use<ILogger<UpdateCharacterCommandHandler>>(new FakeLogger<UpdateCharacterCommandHandler>(nameof(UpdateCharacterCommandHandler)));
     }
 }

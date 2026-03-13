@@ -1,4 +1,5 @@
-﻿using Common.Testing.Persistence;
+﻿using Common.Testing.Logging;
+using Common.Testing.Persistence;
 using Common.Testing.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Moq.AutoMock;
@@ -19,6 +20,7 @@ public static class NServiceBusMessageHandlerTest
         testSetup.ConfigureMocker?.Invoke(mocker);
         mocker.Use<IMessageHandlerContext>(context);
 
+        using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
         using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
         {
             var handler = mocker.GetRequiredService<TMessageHandler>();
@@ -29,7 +31,11 @@ public static class NServiceBusMessageHandlerTest
                 publishedMessages: context.PublishedMessages.Select(m => m.Message).Cast<IMessage>().ToList(),
                 repliedMessages: context.RepliedMessages.Select(m => m.Message).Cast<IMessage>().ToList());
 
-            return new MessageHandlerTestResult<TMessageHandler>(FakeDatabase.DatabaseState, busState, mocker);
+            return new MessageHandlerTestResult<TMessageHandler>(
+                FakeDatabase.DatabaseState,
+                busState,
+                mocker,
+                FakeLoggingDatabase.Logs.ToList());
         }        
     }
 }

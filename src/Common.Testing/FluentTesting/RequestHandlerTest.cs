@@ -1,4 +1,5 @@
 ﻿using Ardalis.Result;
+using Common.Testing.Logging;
 using Common.Testing.Persistence;
 using Common.Testing.ServiceBus;
 using MediatR;
@@ -21,6 +22,7 @@ public static class RequestHandlerTest
         testSetup.ConfigureMocker?.Invoke(mocker);
         mocker.Use<IMessageSession>(messageSession);
 
+        using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
         using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
         {
             var handler = mocker.GetRequiredService<TRequestHandler>();
@@ -30,7 +32,12 @@ public static class RequestHandlerTest
                 publishedMessages: messageSession.PublishedMessages.Select(m => m.Message).Cast<IMessage>().ToList(),
                 repliedMessages: Array.Empty<IMessage>());
 
-            return new RequestHandlerTestResult<TRequestHandler>(FakeDatabase.DatabaseState, busState, mocker, result);
+            return new RequestHandlerTestResult<TRequestHandler>(
+                FakeDatabase.DatabaseState,
+                busState,
+                mocker,
+                result,
+                FakeLoggingDatabase.Logs.ToList());
         }        
     }
 }

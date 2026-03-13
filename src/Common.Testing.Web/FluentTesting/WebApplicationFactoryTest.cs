@@ -16,7 +16,7 @@ public static class WebApplicationFactoryTest
         where TFactory : WebApplicationFactory<TEntry>
         where TEntry : class
     {
-        using (FakeLoggingDatabase.Initialize())
+        using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
         using (FakeServiceBus.Initialize())
         using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
         {

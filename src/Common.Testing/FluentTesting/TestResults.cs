@@ -1,4 +1,5 @@
 ﻿using Ardalis.Result;
+using Common.Testing.Logging;
 using Common.Testing.Persistence;
 using Common.Testing.ServiceBus;
 using Moq.AutoMock;
@@ -9,17 +10,20 @@ public class MessageHandlerTestResult<THandler> :
     IRepsitoryTestResult,
     IServiceBusTestResult,
     IAutoMockerTestResult,
-    IExceptionTestResult
+    IExceptionTestResult,
+    ILoggingTestResult
 {
     public MessageHandlerTestResult(
         DatabaseState databaseState,
         ServiceBusState serviceBusMessages,
         AutoMocker autoMocker,
+        IReadOnlyList<LogEntry> logs,
         Exception? exceptionThrown = null)
     {
         DatabaseState = databaseState;
         ServiceBusState = serviceBusMessages;
         AutoMocker = autoMocker;
+        Logs = logs;
         ExceptionThrown = exceptionThrown;
     }
 
@@ -27,6 +31,8 @@ public class MessageHandlerTestResult<THandler> :
     public ServiceBusState ServiceBusState { get; }
     public AutoMocker AutoMocker { get; }
     public Exception? ExceptionThrown { get; }
+
+    public IReadOnlyList<LogEntry> Logs { get; }
 }
 
 public class RequestHandlerTestResult<THandler> :
@@ -34,19 +40,22 @@ public class RequestHandlerTestResult<THandler> :
     IServiceBusTestResult,
     IAutoMockerTestResult,
     ITestOutput<Result>,
-    IExceptionTestResult
+    IExceptionTestResult,
+    ILoggingTestResult
 {
     public RequestHandlerTestResult(
         DatabaseState databaseState,
         ServiceBusState serviceBusMessages,
         AutoMocker autoMocker,
         Result output,
+        IReadOnlyList<LogEntry> logs,
         Exception? exceptionThrown = null)
     {
         DatabaseState = databaseState;
         ServiceBusState = serviceBusMessages;
         AutoMocker = autoMocker;
         Output = output;
+        Logs = logs;
         ExceptionThrown = exceptionThrown;
     }
 
@@ -55,4 +64,6 @@ public class RequestHandlerTestResult<THandler> :
     public AutoMocker AutoMocker { get; }
     public Result Output { get; }
     public Exception? ExceptionThrown { get; }
+
+    public IReadOnlyList<LogEntry> Logs { get; }
 }

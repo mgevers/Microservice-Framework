@@ -31,6 +31,9 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
             .Act(httpClient => httpClient.PostAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.OK)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
+            .AssertStructuredLog(LogLevel.Information, new { command = nameof(AddCharacterRequest) })
+            .AssertStructuredLog(LogLevel.Information, "received command: {command}", new { command = nameof(AddCharacterRequest) })
+            .AssertStructuredLog(new LogEntry(LogLevel.Information, "received command: {command}", nameof(AddCharacterRequest)))
             .AssertDatabase(new DatabaseState(character))
             .AssertPublishedEvent(new CharacterAddedEvent(character.Id));
     }

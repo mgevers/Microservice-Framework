@@ -23,7 +23,7 @@ public class CharacterRequestHandlerTests
         await Arrange<AddCharacterRequestHandler>(DatabaseState.Empty)
             .Handle(new AddCharacterRequest(character.Id, character.Name))
             .AssertOutput(Result.Success())
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertPublishedEvent(new CharacterAddedEvent(character.Id));
     }
@@ -38,7 +38,7 @@ public class CharacterRequestHandlerTests
                 isReadOnlyDatabase: true)
             .Handle(new AddCharacterRequest(character.Id, character.Name))
             .AssertOutput(Result.CriticalError("cannot write to readonly database"))
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
             .AssertDatabase(DatabaseState.Empty)
             .AssertNoPublishedEvents();
     }
@@ -53,7 +53,7 @@ public class CharacterRequestHandlerTests
         await Arrange<UpdateCharacterRequestHandler>(new DatabaseState(character))
             .Handle(new UpdateCharacterRequest(id, updatedCharacter.Name))
             .AssertOutput(Result.Success())
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
             .AssertDatabase(new DatabaseState(updatedCharacter))
             .AssertPublishedEvent(new CharacterUpdatedEvent(id));
     }
@@ -68,7 +68,7 @@ public class CharacterRequestHandlerTests
                 isReadOnlyDatabase: true)
             .Handle(new UpdateCharacterRequest(character.Id, "new name"))
             .AssertOutput(Result.CriticalError("cannot write to readonly database"))
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertNoPublishedEvents();
     }
@@ -81,7 +81,7 @@ public class CharacterRequestHandlerTests
         await Arrange<RemoveCharacterRequestHandler>(new DatabaseState(character))
             .Handle(new RemoveCharacterRequest(character.Id))
             .AssertOutput(Result.Success())
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
             .AssertDatabase(DatabaseState.Empty)
             .AssertPublishedEvent(new CharacterRemovedEvent(character.Id));
     }
@@ -96,18 +96,21 @@ public class CharacterRequestHandlerTests
                 isReadOnlyDatabase: true)
             .Handle(new RemoveCharacterRequest(character.Id))
             .AssertOutput(Result.CriticalError("cannot write to readonly database"))
-            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
+            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertNoPublishedEvents();
     }
 
     private static HandlerTestSetup<THandler> Arrange<THandler>(DatabaseState databaseState, bool isReadOnlyDatabase = false)
     {
-        return new HandlerTestSetup<THandler>(databaseState, isReadOnlyDatabase, ConfigureMocker);
+        return new HandlerTestSetup<THandler>(databaseState, isReadOnlyDatabase, configureMocker: ConfigureMocker);
     }
 
     private static void ConfigureMocker(AutoMocker mocker)
     {
         mocker.Use<IRepository<Character>>(new FakeRepository<Character>());
+        mocker.Use<ILogger<AddCharacterRequestHandler>>(new FakeLogger<AddCharacterRequestHandler>(nameof(AddCharacterRequestHandler)));
+        mocker.Use<ILogger<RemoveCharacterRequestHandler>>(new FakeLogger<RemoveCharacterRequestHandler>(nameof(RemoveCharacterRequestHandler)));
+        mocker.Use<ILogger<UpdateCharacterRequestHandler>>(new FakeLogger<UpdateCharacterRequestHandler>(nameof(UpdateCharacterRequestHandler)));
     }
 }

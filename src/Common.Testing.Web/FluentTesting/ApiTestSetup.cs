@@ -1,4 +1,5 @@
-﻿using Common.Testing.Persistence;
+﻿using Common.Testing.Logging;
+using Common.Testing.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +13,7 @@ public class ApiTestSetup<TFactory, TEntry>
         TFactory factory,
         DatabaseState? databaseState = null,
         bool isReadOnlyDatabase = false,
+        FakeLoggingConfiguration? loggingConfiguration = null,
         Action<IServiceCollection>? configureServices = null)
     {
         return new ApiTestSetup<TFactory, TEntry>(
@@ -20,6 +22,7 @@ public class ApiTestSetup<TFactory, TEntry>
             isReadOnlyDatabase,
             authToken: null,
             apiKey: null,
+            loggingConfiguration,
             configureServices);
     }
 
@@ -28,6 +31,7 @@ public class ApiTestSetup<TFactory, TEntry>
         DatabaseState? databaseState = null,
         string? authToken = null,
         bool isReadOnlyDatabase = false,
+        FakeLoggingConfiguration? loggingConfiguration = null,
         Action<IServiceCollection>? configureServices = null)
     {
         return new ApiTestSetup<TFactory, TEntry>(
@@ -36,6 +40,7 @@ public class ApiTestSetup<TFactory, TEntry>
             isReadOnlyDatabase,
             authToken,
             apiKey: null,
+            loggingConfiguration,
             configureServices);
     }
 
@@ -44,6 +49,7 @@ public class ApiTestSetup<TFactory, TEntry>
         DatabaseState? databaseState = null,
         string? apiKey = null,
         bool isReadOnlyDatabase = false,
+        FakeLoggingConfiguration? loggingConfiguration = null,
         Action<IServiceCollection>? configureServices = null)
     {
         return new ApiTestSetup<TFactory, TEntry>(
@@ -52,6 +58,7 @@ public class ApiTestSetup<TFactory, TEntry>
             isReadOnlyDatabase,
             authToken: null,
             apiKey,
+            loggingConfiguration,
             configureServices);
     }
 
@@ -61,6 +68,7 @@ public class ApiTestSetup<TFactory, TEntry>
         bool isReadOnlyDatabase,
         string? authToken,
         string? apiKey,
+        FakeLoggingConfiguration? loggingConfiguration = null,
         Action<IServiceCollection>? configureServices = null)
     {
         Factory = factory;
@@ -68,6 +76,7 @@ public class ApiTestSetup<TFactory, TEntry>
         DatabaseState = databaseState;
         AuthToken = authToken;
         ApiKey = apiKey;
+        LoggingConfiguration = loggingConfiguration;
         ConfigureServices = configureServices;
     }
 
@@ -77,4 +86,5 @@ public class ApiTestSetup<TFactory, TEntry>
     public string? AuthToken { get; }
     public Action<IServiceCollection>? ConfigureServices { get; }
     public string? ApiKey { get; }
+    public FakeLoggingConfiguration? LoggingConfiguration { get; }
 }

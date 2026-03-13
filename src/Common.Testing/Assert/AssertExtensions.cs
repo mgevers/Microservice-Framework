@@ -46,6 +46,43 @@ public static class AssertExtensions
         Xunit.Assert.Equal(expected: expectedJson, actual: actualJson);
     }
 
+    public static bool IsDeepEqual<T>(
+        T expected,
+        T actual,
+        bool includeNonPublicProperties = false)
+    {
+        string expectedJson = DeepEqualSerializer.SerializeObject(
+            value: expected,
+            blacklistProperties: [],
+            includeNonPublicProperties: includeNonPublicProperties);
+
+        string actualJson = DeepEqualSerializer.SerializeObject(
+            value: actual,
+            blacklistProperties: [],
+            includeNonPublicProperties: includeNonPublicProperties);
+
+        return expectedJson == actualJson;
+    }
+
+    public static bool IsDeepEqualWithBlacklist<T>(
+        T expected,
+        T actual,
+        bool includeNonPublicProperties,
+        params Expression<Func<T, object>>[] blacklistProperties)
+    {
+        string expectedJson = DeepEqualSerializer.SerializeObject(
+            value: expected,
+            blacklistProperties: blacklistProperties,
+            includeNonPublicProperties: includeNonPublicProperties);
+
+        string actualJson = DeepEqualSerializer.SerializeObject(
+            value: actual,
+            blacklistProperties: blacklistProperties,
+            includeNonPublicProperties: includeNonPublicProperties);
+
+        return expectedJson == actualJson;
+    }
+
     public static void EqualResults<T>(Result<T> expected, Result<T> actual)
     {
         Xunit.Assert.True(expected.IsSuccess == actual.IsSuccess, "results success status were different");
