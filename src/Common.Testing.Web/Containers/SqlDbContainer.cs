@@ -8,13 +8,13 @@ public class SqlDbContainer : IAsyncLifetime
     public MsSqlContainer Container { get; } = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2025-latest")
         .Build();
 
-    public Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
-        return Container.StartAsync();
+        await Container.StartAsync();
     }
 
-    public Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        return Container.StopAsync();
+        await Container.StopAsync();
     }
 }

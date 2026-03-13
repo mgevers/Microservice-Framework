@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using System.Diagnostics;
@@ -36,11 +37,10 @@ public static class JaegerOpenTelemetryHostApplicationBuilderExtensions
                     .AddSource("MassTransit")
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddJaegerExporter(o =>
+                    .AddOtlpExporter(o =>
                     {
-                        o.AgentHost = jaegerOptions.AgentHost;
-                        o.AgentPort = jaegerOptions.AgentPort;
-                        o.MaxPayloadSizeInBytes = 4096;
+                        o.Endpoint = new Uri($"http://{jaegerOptions.AgentHost}:4317");
+                        o.Protocol = OtlpExportProtocol.Grpc;
                         o.ExportProcessorType = ExportProcessorType.Batch;
                         o.BatchExportProcessorOptions = new BatchExportProcessorOptions<Activity>
                         {

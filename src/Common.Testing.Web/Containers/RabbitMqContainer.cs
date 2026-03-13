@@ -12,14 +12,14 @@ public class RabbitMqContainer : IAsyncLifetime
         .WithPassword("guest")
         .Build();
 
-    public Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
-        return Container.StartAsync();
+        await Container.StartAsync();
     }
 
-    public Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        return Container.StopAsync();
+        await Container.StopAsync();
     }
 
     public RabbitMqTransportOptions GetOptions()

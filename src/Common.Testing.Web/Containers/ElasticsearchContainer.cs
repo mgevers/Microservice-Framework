@@ -16,14 +16,14 @@ public class ElasticsearchContainer : IAsyncLifetime
 
     public ElasticsearchClient ElasticsearchClient => GetElasticsearchClient();
 
-    public Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
-        return Container.StartAsync();
+        await Container.StartAsync();
     }
 
-    public Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        return Container.StopAsync();
+        await Container.StopAsync();
     }
 
     private ElasticsearchClient GetElasticsearchClient()

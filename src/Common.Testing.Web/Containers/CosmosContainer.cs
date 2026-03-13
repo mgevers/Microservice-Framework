@@ -24,13 +24,13 @@ public class CosmosContainer : IAsyncLifetime
             .WithConnectionModeGateway()
             .Build();
 
-    public Task DisposeAsync()
+    public async ValueTask InitializeAsync()
     {
-        return CosmosDbContainer.StopAsync();
+        await CosmosDbContainer.StartAsync();
     }
 
-    public Task InitializeAsync()
+    public async ValueTask DisposeAsync()
     {
-        return CosmosDbContainer.StartAsync();
+        await CosmosDbContainer.StopAsync();
     }
 }
