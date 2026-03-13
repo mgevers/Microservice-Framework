@@ -9,13 +9,12 @@ using TestApp.Core.Domain;
 
 namespace TestApp.Core.CommandHandlers;
 
-public class AddCharacterCommandHandler :
-    IHandleMessages<AddCharacterCommand>
+public class AddCharacterConsumer : IConsumer<AddCharacterCommand>
 {
     private readonly IRepository<Character> repository;
-    private readonly ILogger<AddCharacterCommandHandler> logger;
+    private readonly ILogger<AddCharacterConsumer> logger;
 
-    public AddCharacterCommandHandler(IRepository<Character> repository, ILogger<AddCharacterCommandHandler> logger)
+    public AddCharacterConsumer(IRepository<Character> repository, ILogger<AddCharacterConsumer> logger)
     {
         this.repository = repository;
         this.logger = logger;
@@ -28,6 +27,27 @@ public class AddCharacterCommandHandler :
 
         await repository.Create(character, context.CancellationToken)
             .Tap(() => context.Publish(new CharacterAddedEvent(context.Message.CharacterId)));
+    }
+
+    public async Task Handle(AddCharacterCommand message, IMessageHandlerContext context)
+    {
+        logger.LogInformation("received command: {command}", nameof(AddCharacterCommand));
+        var character = new Character(message.CharacterId, message.Name);
+
+        await repository.Create(character, context.CancellationToken)
+            .Tap(() => context.Publish(new CharacterAddedEvent(message.CharacterId)));
+    }
+}
+
+public class AddCharacterCommandHandler : IHandleMessages<AddCharacterCommand>
+{
+    private readonly IRepository<Character> repository;
+    private readonly ILogger<AddCharacterCommandHandler> logger;
+
+    public AddCharacterCommandHandler(IRepository<Character> repository, ILogger<AddCharacterCommandHandler> logger)
+    {
+        this.repository = repository;
+        this.logger = logger;
     }
 
     public async Task Handle(AddCharacterCommand message, IMessageHandlerContext context)

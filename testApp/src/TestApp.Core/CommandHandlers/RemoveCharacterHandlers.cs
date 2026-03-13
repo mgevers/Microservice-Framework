@@ -1,12 +1,34 @@
 ﻿using Ardalis.Result;
 using Common.LanguageExtensions.Contracts;
 using Common.LanguageExtensions.Utilities;
+using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using TestApp.Core.Boundary;
 using TestApp.Core.Domain;
 
 namespace TestApp.Core.CommandHandlers;
+
+public class RemoveCharacterConsumer : IConsumer<RemoveCharacterCommand>
+{
+    private readonly IRepository<Character> repository;
+    private readonly ILogger<RemoveCharacterConsumer> logger;
+
+    public RemoveCharacterConsumer(IRepository<Character> repository, ILogger<RemoveCharacterConsumer> logger)
+    {
+        this.repository = repository;
+        this.logger = logger;
+    }
+
+    public async Task Consume(ConsumeContext<RemoveCharacterCommand> context)
+    {
+        logger.LogInformation($"received command: {nameof(RemoveCharacterCommand)}");
+
+        await repository.LoadById(context.Message.CharacterId, context.CancellationToken)
+            .Bind(character => repository.Delete(character, context.CancellationToken))
+            .Tap(() => context.Publish(new CharacterRemovedEvent(context.Message.CharacterId)));
+    }
+}
 
 public class RemoveCharacterCommandHandler : IHandleMessages<RemoveCharacterCommand>
 {
