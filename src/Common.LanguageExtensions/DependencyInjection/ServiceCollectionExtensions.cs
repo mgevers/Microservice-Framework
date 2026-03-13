@@ -6,6 +6,23 @@ namespace Common.LanguageExtensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
+        public static IServiceCollection AddSingletonAsAllImplementedInterfaces<T>(this IServiceCollection services)
+        {
+            return AddSingletonAsAllImplementedInterfaces(services, typeof(T));
+        }
+
+        public static IServiceCollection AddSingletonAsAllImplementedInterfaces(this IServiceCollection services, Type concreteType)
+        {
+            services.AddSingleton(concreteType);
+
+            foreach (var interfaceType in concreteType.GetInterfaces())
+            {
+                services.AddSingleton(serviceType: interfaceType, implementationFactory: serviceProvider => serviceProvider.GetRequiredService(concreteType));
+            }
+
+            return services;
+        }
+
         public static IServiceCollection AddScopedAsAllImplementedInterfaces<T>(this IServiceCollection services)
         {
             return AddScopedAsAllImplementedInterfaces(services, typeof(T));
