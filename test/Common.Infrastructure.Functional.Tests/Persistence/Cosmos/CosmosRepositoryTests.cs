@@ -29,25 +29,25 @@ public class CosmosRepositoryTests : IClassFixture<CosmosContainer>
             EmailAddress = "jjohn@gmail.com",
         };
 
-        var insertResult = await repository.Create(person);
+        var insertResult = await repository.Create(person, TestContext.Current.CancellationToken);
         Assert.True(insertResult.IsSuccess);
 
-        var findResult = await repository.LoadById(person.Id);
+        var findResult = await repository.LoadById(person.Id, TestContext.Current.CancellationToken);
         Assert.True(findResult.IsSuccess);
         AssertExtensions.DeepEqual(person, findResult.Value);
 
         person.Name = "James John";
-        var updateResult = await repository.Update(person);
+        var updateResult = await repository.Update(person, TestContext.Current.CancellationToken);
         Assert.True(updateResult.IsSuccess);
 
-        findResult = await repository.LoadById(person.Id);
+        findResult = await repository.LoadById(person.Id, TestContext.Current.CancellationToken);
         Assert.True(findResult.IsSuccess);
         AssertExtensions.DeepEqual(person, findResult.Value);
 
-        var deleteResult = await repository.Delete(person);
+        var deleteResult = await repository.Delete(person, TestContext.Current.CancellationToken);
         Assert.True(deleteResult.IsSuccess);
 
-        findResult = await repository.LoadById(person.Id);
+        findResult = await repository.LoadById(person.Id, TestContext.Current.CancellationToken);
         Assert.False(findResult.IsSuccess);
     }
 
@@ -61,9 +61,9 @@ public class CosmosRepositoryTests : IClassFixture<CosmosContainer>
 
     private static async Task<Container> EnsureCosmosContainer(CosmosClient cosmosClient)
     {
-        await cosmosClient.CreateDatabaseIfNotExistsAsync(_databaseName);
+        await cosmosClient.CreateDatabaseIfNotExistsAsync(_databaseName, cancellationToken: TestContext.Current.CancellationToken);
         var database = cosmosClient.GetDatabase(_databaseName);
-        await database.CreateContainerIfNotExistsAsync(_containerName, "/id");
+        await database.CreateContainerIfNotExistsAsync(_containerName, "/id", cancellationToken: TestContext.Current.CancellationToken);
 
         return database.GetContainer(_containerName);
     }
