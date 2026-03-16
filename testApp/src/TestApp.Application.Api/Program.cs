@@ -1,5 +1,6 @@
 using Common.Infrastructure;
 using Common.Infrastructure.Auth;
+using Common.Infrastructure.Mediator;
 using TestApp.Core.CommandHandlers;
 
 namespace TestApp.Application.Api;
@@ -23,7 +24,7 @@ public partial class Program
     {
         services
             .AddJwtAndAPIKeyAuthentication("", "")
-            .AddMediatR(config => config.RegisterServicesFromAssemblies(typeof(AddCharacterRequestHandler).Assembly));
+            .AddMediatR(typeof(AddCharacterRequestHandler).Assembly);
     }
 
     private static void ConfigureApplication(WebApplication app)
