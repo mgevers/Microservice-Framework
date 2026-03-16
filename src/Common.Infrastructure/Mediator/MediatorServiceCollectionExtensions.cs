@@ -1,5 +1,4 @@
-﻿using MediatR;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
 namespace Common.Infrastructure.Mediator;
@@ -13,7 +12,7 @@ public static class MediatorServiceCollectionExtensions
     {
         return services.AddMediatR(configuration =>
         {
-            configuration.AddBehavior(typeof(IPipelineBehavior<,>), typeof(RetryBehavior<,>));
+            configuration.AddOpenBehavior(typeof(RetryBehavior<,>));
             configuration.RegisterServicesFromAssembly(assembly);
 
             configure?.Invoke(configuration);
@@ -27,7 +26,7 @@ public static class MediatorServiceCollectionExtensions
     {
         return services.AddMediatR(configuration =>
         {
-            configuration.AddBehavior(typeof(IPipelineBehavior<,>), typeof(RetryBehavior<,>));
+            configuration.AddOpenBehavior(typeof(RetryBehavior<,>));
             configuration.RegisterServicesFromAssemblies([.. assemblies]);
 
             configure?.Invoke(configuration);
