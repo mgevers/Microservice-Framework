@@ -71,17 +71,23 @@ public static class MassTransitHostApplicationBuilderExtensions
     {
         config.UsingRabbitMq((busContext, rabbitConfig) =>
         {
-            rabbitConfig.UseNewtonsoftJsonSerializer();
-            rabbitConfig.UseNewtonsoftJsonDeserializer();
+            ConfigureTransportDefaults(busContext, rabbitConfig);
+        });
+    }
 
-            rabbitConfig.ConfigureEndpoints(busContext);
-            rabbitConfig.AutoStart = true;
+    private static void ConfigureTransportDefaults<T>(IBusRegistrationContext busContext, IBusFactoryConfigurator<T> config)
+        where T : IReceiveEndpointConfigurator
+    {
+        config.UseNewtonsoftJsonSerializer();
+        config.UseNewtonsoftJsonDeserializer();
 
-            rabbitConfig.UseMessageRetry(retry =>
-            {
-                retry.Immediate(5);
-                retry.Interval(5, 2);
-            });
+        config.ConfigureEndpoints(busContext);
+        config.AutoStart = true;
+
+        config.UseMessageRetry(retry =>
+        {
+            retry.Immediate(5);
+            retry.Interval(5, 2);
         });
     }
 
