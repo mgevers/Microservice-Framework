@@ -7,15 +7,14 @@ namespace Common.Testing.Persistence;
 public sealed class FakeDatabase : IDisposable
 {
     private static readonly AsyncLocal<Dictionary<Type, List<object>>?> data = new();
-    private static readonly AsyncLocal<bool?> isReadOnlyDatabase = new();
+    private static readonly AsyncLocal<Result?> errorResult = new();
 
     public static Dictionary<Type, List<object>> Data => data.Value!;
-    public static bool IsReadOnly => isReadOnlyDatabase.Value!.Value;
 
-    private FakeDatabase(DatabaseState databaseState, bool isReadOnly)
+    private FakeDatabase(DatabaseState databaseState, Result? error)
     {
         data.Value = new Dictionary<Type, List<object>>();
-        isReadOnlyDatabase.Value = isReadOnly;
+        errorResult.Value = error;
 
         foreach (var entityType in databaseState.GetEntityTypes())
         {
@@ -32,9 +31,9 @@ public sealed class FakeDatabase : IDisposable
         }
     }
 
-    public static FakeDatabase SeedData(DatabaseState state, bool isReadOnlyDatabase)
+    public static FakeDatabase SeedData(DatabaseState state, Result? error)
     {
-        return new FakeDatabase(state, isReadOnlyDatabase);
+        return new FakeDatabase(state, error);
     }
 
     public static DatabaseState DatabaseState => new(Data.Values.SelectMany(e => e).ToList());
@@ -42,9 +41,9 @@ public sealed class FakeDatabase : IDisposable
     public static Result<TEntity> InsertEntity<TEntity>(TEntity entity)
         where TEntity : IDataModelBase
     {
-        if (IsReadOnly)
+        if (errorResult.Value is not null)
         {
-            return Result<TEntity>.CriticalError("cannot write to readonly database");
+            return errorResult.Value;
         }
 
         var entities = GetEntityData(typeof(TEntity));
@@ -62,9 +61,9 @@ public sealed class FakeDatabase : IDisposable
     public static Result<TEntity> UpdateEntity<TEntity>(TEntity entity)
         where TEntity : IDataModelBase
     {
-        if (IsReadOnly)
+        if (errorResult.Value is not null)
         {
-            return Result<TEntity>.CriticalError("cannot write to readonly database");
+            return errorResult.Value;
         }
 
         var entities = GetEntityData(typeof(TEntity));
@@ -88,9 +87,9 @@ public sealed class FakeDatabase : IDisposable
     public static Result<TEntity> UpsertEntity<TEntity>(TEntity entity)
         where TEntity : IDataModelBase
     {
-        if (IsReadOnly)
+        if (errorResult.Value is not null)
         {
-            return Result<TEntity>.CriticalError("cannot write to readonly database");
+            return errorResult.Value;
         }
 
         var entities = GetEntityData(typeof(TEntity));
@@ -128,9 +127,9 @@ public sealed class FakeDatabase : IDisposable
     public static Result DeleteEntity<TEntity>(TEntity entity)
         where TEntity : IDataModelBase
     {
-        if (IsReadOnly)
+        if (errorResult.Value is not null)
         {
-            return Result.CriticalError("cannot write to readonly database");
+            return errorResult.Value;
         }
 
         var entities = GetEntityData(typeof(TEntity));
@@ -148,6 +147,7 @@ public sealed class FakeDatabase : IDisposable
     public void Dispose()
     {
         data.Value = null;
+        errorResult.Value = null;
     }
 
     private static List<object> GetEntityData(Type entityType)

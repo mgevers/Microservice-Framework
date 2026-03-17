@@ -9,6 +9,7 @@ using System.Security.Claims;
 using TestApp.Core.Boundary;
 using TestApp.Tests;
 using Xunit;
+using Ardalis.Result;
 
 namespace TestApp.Application.AsyncApi.Integration.Tests;
 
@@ -110,13 +111,13 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
 
     private ApiTestSetup<TestAppWebApplicationFactory, Program> Arrange(
         DatabaseState? databaseState = null,
-        bool isReadOnlyDatabase = false,
+        Result? databaseError = null,
         string? authToken = null)
     {
         return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithAuthToken(
             factory,
             databaseState,
             authToken,
-            isReadOnlyDatabase);
+            databaseError);
     }
 }

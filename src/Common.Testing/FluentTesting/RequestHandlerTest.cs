@@ -23,7 +23,7 @@ public static class RequestHandlerTest
         mocker.Use<IMessageSession>(messageSession);
 
         using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
-        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
+        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.DatabaseError))
         {
             var handler = mocker.GetRequiredService<TRequestHandler>();
             var result = await handler!.Handle(request, CancellationToken.None);
@@ -53,7 +53,7 @@ public static class RequestHandlerTest
         mocker.Use<IMessageSession>(messageSession);
 
         using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
-        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
+        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.DatabaseError))
         {
             var handler = mocker.GetRequiredService<TRequestHandler>();
             var result = await handler!.Handle(request, CancellationToken.None);

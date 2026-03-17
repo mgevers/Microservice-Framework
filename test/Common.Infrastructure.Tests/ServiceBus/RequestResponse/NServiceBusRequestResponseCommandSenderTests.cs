@@ -24,7 +24,7 @@ namespace Common.Infrastructure.Tests.ServiceBus.RequestResponse
 
         private static HandlerTestSetup<CommandHandler> Arrange(DatabaseState databaseState)
         {
-            return new HandlerTestSetup<CommandHandler>(databaseState, isReadOnlyDatabase: false);
+            return new HandlerTestSetup<CommandHandler>(databaseState);
         }
     }
 }

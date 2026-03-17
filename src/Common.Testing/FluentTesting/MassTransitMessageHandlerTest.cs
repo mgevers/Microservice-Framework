@@ -25,7 +25,7 @@ public static class MassTransitMessageHandlerTest
         mocker.Use(consumeContextMock);
 
         using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
-        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
+        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.DatabaseError))
         {
             var handler = mocker.GetRequiredService<TMessageHandler>();
 

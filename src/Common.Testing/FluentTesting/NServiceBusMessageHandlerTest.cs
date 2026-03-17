@@ -21,7 +21,7 @@ public static class NServiceBusMessageHandlerTest
         mocker.Use<IMessageHandlerContext>(context);
 
         using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
-        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
+        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.DatabaseError))
         {
             var handler = mocker.GetRequiredService<TMessageHandler>();
 

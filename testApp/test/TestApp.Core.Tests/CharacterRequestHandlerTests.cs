@@ -33,12 +33,13 @@ public class CharacterRequestHandlerTests
     public async Task CreateCharacter_WhenDatabaseLocked_ReturnsFailure()
     {
         var character = DataModels.CreateCharacter();
+        var dbError = Result.CriticalError("cannot write to readonly database");
 
         await Arrange<AddCharacterRequestHandler>(
                 databaseState: DatabaseState.Empty, 
-                isReadOnlyDatabase: true)
+                databaseError: dbError)
             .Handle(new AddCharacterRequest(character.Id, character.Name))
-            .AssertOutput(Result.CriticalError("cannot write to readonly database"))
+            .AssertOutput(dbError)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
             .AssertDatabase(DatabaseState.Empty)
             .AssertNoPublishedEvents();
@@ -63,12 +64,13 @@ public class CharacterRequestHandlerTests
     public async Task UpdateCharacter_WhenDatabaseLocked_ReturnsFailure()
     {
         var character = DataModels.CreateCharacter();
+        var dbError = Result.CriticalError("cannot write to readonly database");
 
         await Arrange<UpdateCharacterRequestHandler>(
                 databaseState: new DatabaseState(character),
-                isReadOnlyDatabase: true)
+                databaseError: dbError)
             .Handle(new UpdateCharacterRequest(character.Id, "new name"))
-            .AssertOutput(Result.CriticalError("cannot write to readonly database"))
+            .AssertOutput(dbError)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertNoPublishedEvents();
@@ -91,20 +93,21 @@ public class CharacterRequestHandlerTests
     public async Task RemoveCharacter_WhenDatabaseLocked_ReturnsFailure()
     {
         var character = DataModels.CreateCharacter();
+        var dbError = Result.CriticalError("cannot write to readonly database");
 
         await Arrange<RemoveCharacterRequestHandler>(
                 databaseState: new DatabaseState(character),
-                isReadOnlyDatabase: true)
+                databaseError: dbError)
             .Handle(new RemoveCharacterRequest(character.Id))
-            .AssertOutput(Result.CriticalError("cannot write to readonly database"))
+            .AssertOutput(dbError)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertNoPublishedEvents();
     }
 
-    private static HandlerTestSetup<THandler> Arrange<THandler>(DatabaseState databaseState, bool isReadOnlyDatabase = false)
+    private static HandlerTestSetup<THandler> Arrange<THandler>(DatabaseState databaseState, Result? databaseError = null)
     {
-        return new HandlerTestSetup<THandler>(databaseState, isReadOnlyDatabase, configureMocker: ConfigureMocker);
+        return new HandlerTestSetup<THandler>(databaseState, databaseError, configureMocker: ConfigureMocker);
     }
 
     private static void ConfigureMocker(AutoMocker mocker)

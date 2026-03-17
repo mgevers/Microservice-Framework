@@ -1,4 +1,5 @@
-﻿using Common.LanguageExtensions.Contracts;
+﻿using Ardalis.Result;
+using Common.LanguageExtensions.Contracts;
 using Common.Testing.FluentTesting;
 using Common.Testing.FluentTesting.Asserts;
 using Common.Testing.Logging;
@@ -34,7 +35,7 @@ public class CharacterCommandHandlerTests
 
         await Arrange<AddCharacterCommandHandler>(
                 databaseState: DatabaseState.Empty,
-                isReadOnlyDatabase: true)
+                databaseError: Result.CriticalError("cannot write to readonly database"))
             .Handle(new AddCharacterCommand(character.Id, character.Name))
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterCommand)}"))
             .AssertDatabase(DatabaseState.Empty)
@@ -62,7 +63,7 @@ public class CharacterCommandHandlerTests
 
         await Arrange<UpdateCharacterCommandHandler>(
                 databaseState: new DatabaseState(character),
-                isReadOnlyDatabase: true)
+                databaseError: Result.CriticalError("cannot write to readonly database"))
             .Handle(new UpdateCharacterCommand(character.Id, "new name"))
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterCommand)}"))
             .AssertDatabase(new DatabaseState(character))
@@ -88,16 +89,16 @@ public class CharacterCommandHandlerTests
 
         await Arrange<RemoveCharacterCommandHandler>(
                 databaseState: new DatabaseState(character),
-                isReadOnlyDatabase: true)
+                databaseError: Result.CriticalError("cannot write to readonly database"))
             .Handle(new RemoveCharacterCommand(character.Id))
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterCommand)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertNoPublishedEvents();
     }
 
-    public static HandlerTestSetup<THandler> Arrange<THandler>(DatabaseState databaseState, bool isReadOnlyDatabase = false)
+    public static HandlerTestSetup<THandler> Arrange<THandler>(DatabaseState databaseState, Result? databaseError = null)
     {
-        return new HandlerTestSetup<THandler>(databaseState, isReadOnlyDatabase, configureMocker: ConfigureMocker);
+        return new HandlerTestSetup<THandler>(databaseState, databaseError, configureMocker: ConfigureMocker);
     }
 
     private static void ConfigureMocker(AutoMocker mocker)

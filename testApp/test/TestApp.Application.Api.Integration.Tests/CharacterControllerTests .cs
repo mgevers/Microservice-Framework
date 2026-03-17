@@ -1,4 +1,5 @@
-﻿using Common.LanguageExtensions;
+﻿using Ardalis.Result;
+using Common.LanguageExtensions;
 using Common.Testing.FluentTesting.Asserts;
 using Common.Testing.Integration.FluentTesting;
 using Common.Testing.Logging;
@@ -62,7 +63,7 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
 
         await
             Arrange(
-                isReadOnlyDatabase: true,
+                databaseError: Result.CriticalError("cannot write to readonly database"),
                 authToken: authToken)
             .Act(httpClient => httpClient.PostAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.InternalServerError)
@@ -117,7 +118,7 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         await
             Arrange(
                 databaseState: new DatabaseState(character),
-                isReadOnlyDatabase: true,
+               databaseError: Result.CriticalError("cannot write to readonly database"),
                 authToken: authToken)
             .Act(httpClient => httpClient.PutAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.InternalServerError)
@@ -170,7 +171,7 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         await
             Arrange(
                 databaseState: new DatabaseState(character),
-                isReadOnlyDatabase: true,
+                databaseError: Result.CriticalError("cannot write to readonly database"),
                 authToken: authToken)
             .Act(httpClient => httpClient.DeleteAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.InternalServerError)
@@ -182,12 +183,12 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
     private ApiTestSetup<TestAppWebApplicationFactory, Program> Arrange(
         DatabaseState? databaseState = null,
         string? authToken = null,
-        bool isReadOnlyDatabase = false)
+        Result? databaseError = null)
     {
         return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithAuthToken(
             factory,
             databaseState: databaseState,
             authToken: authToken,
-            isReadOnlyDatabase: isReadOnlyDatabase);
+            databaseError: databaseError);
     }
 }

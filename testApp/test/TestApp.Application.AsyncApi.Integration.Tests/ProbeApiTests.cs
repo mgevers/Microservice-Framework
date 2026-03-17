@@ -91,7 +91,7 @@ public class ProbeApiTests : IClassFixture<TestAppWebApplicationFactory>
         return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithAuthToken(
             factory,
             authToken: authToken,
-            isReadOnlyDatabase: true);
+            databaseError: Ardalis.Result.Result.CriticalError("cannot write to readonly database"));
     }
 
     private static double ConvertToUnixTimestamp(DateTime date)

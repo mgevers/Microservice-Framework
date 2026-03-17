@@ -1,4 +1,5 @@
-﻿using Common.Testing.Logging;
+﻿using Ardalis.Result;
+using Common.Testing.Logging;
 using Common.Testing.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,14 +13,14 @@ public class ApiTestSetup<TFactory, TEntry>
     public static ApiTestSetup<TFactory, TEntry> ArrangeWithoutAuth(
         TFactory factory,
         DatabaseState? databaseState = null,
-        bool isReadOnlyDatabase = false,
+        Result? databaseError = null,
         FakeLoggingConfiguration? loggingConfiguration = null,
         Action<IServiceCollection>? configureServices = null)
     {
         return new ApiTestSetup<TFactory, TEntry>(
             factory,
             databaseState ?? DatabaseState.Empty,
-            isReadOnlyDatabase,
+            databaseError,
             authToken: null,
             apiKey: null,
             loggingConfiguration,
@@ -30,14 +31,14 @@ public class ApiTestSetup<TFactory, TEntry>
         TFactory factory,
         DatabaseState? databaseState = null,
         string? authToken = null,
-        bool isReadOnlyDatabase = false,
+        Result? databaseError = null,
         FakeLoggingConfiguration? loggingConfiguration = null,
         Action<IServiceCollection>? configureServices = null)
     {
         return new ApiTestSetup<TFactory, TEntry>(
             factory,
             databaseState ?? DatabaseState.Empty,
-            isReadOnlyDatabase,
+            databaseError,
             authToken,
             apiKey: null,
             loggingConfiguration,
@@ -48,14 +49,14 @@ public class ApiTestSetup<TFactory, TEntry>
         TFactory factory,
         DatabaseState? databaseState = null,
         string? apiKey = null,
-        bool isReadOnlyDatabase = false,
+        Result? databaseError = null,
         FakeLoggingConfiguration? loggingConfiguration = null,
         Action<IServiceCollection>? configureServices = null)
     {
         return new ApiTestSetup<TFactory, TEntry>(
             factory,
             databaseState ?? DatabaseState.Empty,
-            isReadOnlyDatabase,
+            databaseError,
             authToken: null,
             apiKey,
             loggingConfiguration,
@@ -65,14 +66,14 @@ public class ApiTestSetup<TFactory, TEntry>
     private ApiTestSetup(
         TFactory factory,
         DatabaseState databaseState,
-        bool isReadOnlyDatabase,
+        Result? databaseError,
         string? authToken,
         string? apiKey,
         FakeLoggingConfiguration? loggingConfiguration = null,
         Action<IServiceCollection>? configureServices = null)
     {
         Factory = factory;
-        IsReadOnlyDatabase = isReadOnlyDatabase;
+        DatabaseError = databaseError;
         DatabaseState = databaseState;
         AuthToken = authToken;
         ApiKey = apiKey;
@@ -81,7 +82,7 @@ public class ApiTestSetup<TFactory, TEntry>
     }
 
     public TFactory Factory { get; }
-    public bool IsReadOnlyDatabase { get; }
+    public Result? DatabaseError { get; }
     public DatabaseState DatabaseState { get; }
     public string? AuthToken { get; }
     public Action<IServiceCollection>? ConfigureServices { get; }

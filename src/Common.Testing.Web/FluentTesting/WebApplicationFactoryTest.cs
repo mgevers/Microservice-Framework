@@ -18,7 +18,7 @@ public static class WebApplicationFactoryTest
     {
         using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
         using (FakeServiceBus.Initialize())
-        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
+        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.DatabaseError))
         {
             testSetup.Factory.Server.PreserveExecutionContext = true;
             var httpClient = testSetup.Factory.CreateClient();
