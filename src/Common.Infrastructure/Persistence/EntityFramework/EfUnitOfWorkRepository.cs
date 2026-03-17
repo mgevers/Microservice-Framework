@@ -14,8 +14,8 @@ public class EFUnitOfWorkRepository : IUnitOfWorkRepository
         this.dbContext = dbContext;
     }
 
-    public async Task<Result<IReadOnlyList<TEntity>>> LoadAll<TEntity>(int count = 1_000, CancellationToken cancellationToken = default)
-        where TEntity : class, IDataModel
+    public async Task<Result<IReadOnlyList<TEntity>>> LoadAll<TEntity, TKey>(int count = 1_000, CancellationToken cancellationToken = default)
+        where TEntity : class, IDataModel<TKey>
     {
         var entity = await this.dbContext.Set<TEntity>()
             .ToListAsync(cancellationToken);
@@ -25,8 +25,14 @@ public class EFUnitOfWorkRepository : IUnitOfWorkRepository
             : Result.Success<IReadOnlyList<TEntity>>(entity);
     }
 
-    public async Task<Result<TEntity>> LoadById<TEntity>(Guid id, CancellationToken cancellationToken = default)
+    public Task<Result<IReadOnlyList<TEntity>>> LoadAll<TEntity>(int count = 1_000, CancellationToken cancellationToken = default)
         where TEntity : class, IDataModel
+    {
+        return this.LoadAll<TEntity, Guid>(count, cancellationToken);
+    }
+
+    public async Task<Result<TEntity>> LoadById<TEntity, TKey>(TKey id, CancellationToken cancellationToken = default)
+        where TEntity : class, IDataModel<TKey>
     {
         var entity = await this.dbContext.Set<TEntity>()
             .SingleOrDefaultAsync(p => id!.Equals(p.Id), cancellationToken);
@@ -36,11 +42,34 @@ public class EFUnitOfWorkRepository : IUnitOfWorkRepository
             : Result.Success(entity);
     }
 
-    public async Task<Result<IReadOnlyList<TEntity>>> LoadByIds<TEntity>(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default) 
+    public Task<Result<TEntity>> LoadById<TEntity>(Guid id, CancellationToken cancellationToken = default)
         where TEntity : class, IDataModel
+    {
+        return this.LoadById<TEntity, Guid>(id, cancellationToken);
+    }
+
+    public async Task<Result<IReadOnlyList<TEntity>>> LoadByIds<TEntity, TKey>(IReadOnlyCollection<TKey> ids, CancellationToken cancellationToken = default) 
+        where TEntity : class, IDataModel<TKey>
     {
         var entities = await this.dbContext.Set<TEntity>()
             .Where(entity => ids.Contains(entity.Id))
+            .ToListAsync(cancellationToken);
+
+        return entities == null
+            ? Result<IReadOnlyList<TEntity>>.NotFound($"entity with id not found")
+            : Result.Success<IReadOnlyList<TEntity>>(entities);
+    }
+
+    public Task<Result<IReadOnlyList<TEntity>>> LoadByIds<TEntity>(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+        where TEntity : class, IDataModel
+    {
+        return this.LoadByIds<TEntity, Guid>(ids, cancellationToken);
+    }
+
+    async Task<Result<IReadOnlyList<TEntity>>> IReadOnlyRepository.Query<TEntity, TKey>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)
+    {
+        var entities = await this.dbContext.Set<TEntity>()
+            .Where(queryFunc)
             .ToListAsync(cancellationToken);
 
         return entities == null
@@ -57,6 +86,16 @@ public class EFUnitOfWorkRepository : IUnitOfWorkRepository
         return entities == null
             ? Result<IReadOnlyList<TEntity>>.NotFound($"entity with id not found")
             : Result.Success<IReadOnlyList<TEntity>>(entities);
+    }
+
+    async Task<Result<TEntity>> IReadOnlyRepository.Find<TEntity, TKey>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)
+    {
+        var entity = await this.dbContext.Set<TEntity>()
+            .SingleOrDefaultAsync(queryFunc, cancellationToken);
+
+        return entity == null
+            ? Result<TEntity>.NotFound($"entity not found")
+            : Result.Success<TEntity>(entity);
     }
 
     async Task<Result<TEntity>> IReadOnlyRepository.Find<TEntity>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)

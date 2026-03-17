@@ -10,4 +10,6 @@ public class DataModel : Entity<Guid>, IDataModel
 
     public DataModel()
         : base() { }
+
+    public object GetId() => Id;
 }

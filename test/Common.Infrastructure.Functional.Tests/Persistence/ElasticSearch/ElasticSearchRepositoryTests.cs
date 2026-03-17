@@ -163,5 +163,7 @@ public class ElasticSearchRepositoryTests : IClassFixture<ElasticsearchContainer
         public string Name { get; set; } = string.Empty;
 
         public string? ETag { get; set; }
+
+        public object GetId() => Id;
     }
 }

@@ -77,5 +77,7 @@ public class CosmosRepositoryTests : IClassFixture<CosmosContainer>
         public string Name { get; set; } = string.Empty;
 
         public string? ETag { get; set; }
+
+        public object GetId() => Id;
     }
 }

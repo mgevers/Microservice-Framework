@@ -7,11 +7,12 @@ namespace Common.Testing.Persistence;
 
 public class FakeUnitOfWorkRepository : IUnitOfWorkRepository
 {
-    private readonly List<IDataModel> toAdd = [];
-    private readonly List<IDataModel> toUpdate = [];
-    private readonly List<IDataModel> toRemove = [];
+    private readonly List<IDataModelBase> toAdd = [];
+    private readonly List<IDataModelBase> toUpdate = [];
+    private readonly List<IDataModelBase> toRemove = [];
 
-    Task<Result<TEntity>> IReadOnlyRepository.Find<TEntity>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)
+    public Task<Result<TEntity>> Find<TEntity, TKey>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)
+        where TEntity : class, IDataModel<TKey>
     {
         var match = FakeDatabase.Query(queryFunc)
             .SingleOrDefault();
@@ -23,7 +24,14 @@ public class FakeUnitOfWorkRepository : IUnitOfWorkRepository
         return Task.FromResult(result);
     }
 
-    Task<Result<IReadOnlyList<TEntity>>> IReadOnlyRepository.LoadAll<TEntity>(int count, CancellationToken cancellationToken)
+    public Task<Result<TEntity>> Find<TEntity>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)
+        where TEntity : class, IDataModel
+    {
+        return this.Find<TEntity, Guid>(queryFunc, cancellationToken);
+    }
+
+    public Task<Result<IReadOnlyList<TEntity>>> LoadAll<TEntity, TKey>(int count, CancellationToken cancellationToken)
+        where TEntity : class, IDataModel<TKey>
     {
         var matches = FakeDatabase.Query<TEntity>().ToList();
 
@@ -34,9 +42,16 @@ public class FakeUnitOfWorkRepository : IUnitOfWorkRepository
         return Task.FromResult(result);
     }
 
-    Task<Result<TEntity>> IReadOnlyRepository.LoadById<TEntity>(Guid id, CancellationToken cancellationToken)
+    public Task<Result<IReadOnlyList<TEntity>>> LoadAll<TEntity>(int count, CancellationToken cancellationToken)
+        where TEntity : class, IDataModel
     {
-        var match = FakeDatabase.Query<TEntity>(entity => entity.Id == id)
+        return this.LoadAll<TEntity, Guid>(count, cancellationToken);
+    }
+
+    public Task<Result<TEntity>> LoadById<TEntity, TKey>(TKey id, CancellationToken cancellationToken)
+        where TEntity : class, IDataModel<TKey>
+    {
+        var match = FakeDatabase.Query<TEntity>(entity => entity.Id!.Equals(id))
             .SingleOrDefault();
 
         var result = match != null
@@ -46,7 +61,14 @@ public class FakeUnitOfWorkRepository : IUnitOfWorkRepository
         return Task.FromResult(result);
     }
 
-    Task<Result<IReadOnlyList<TEntity>>> IReadOnlyRepository.LoadByIds<TEntity>(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    public Task<Result<TEntity>> LoadById<TEntity>(Guid id, CancellationToken cancellationToken)
+        where TEntity : class, IDataModel
+    {
+        return this.LoadById<TEntity, Guid>(id, cancellationToken);
+    }
+
+    public Task<Result<IReadOnlyList<TEntity>>> LoadByIds<TEntity, TKey>(IReadOnlyCollection<TKey> ids, CancellationToken cancellationToken)
+        where TEntity : class, IDataModel<TKey>
     {
         var matches = FakeDatabase.Query<TEntity>(entity => ids.Contains(entity.Id))
             .ToList();
@@ -58,7 +80,14 @@ public class FakeUnitOfWorkRepository : IUnitOfWorkRepository
         return Task.FromResult(result);
     }
 
-    Task<Result<IReadOnlyList<TEntity>>> IReadOnlyRepository.Query<TEntity>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)
+    public Task<Result<IReadOnlyList<TEntity>>> LoadByIds<TEntity>(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+        where TEntity : class, IDataModel
+    {
+        return this.LoadByIds<TEntity, Guid>(ids, cancellationToken);
+    }
+
+    public Task<Result<IReadOnlyList<TEntity>>> Query<TEntity, TKey>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)
+        where TEntity : class, IDataModel<TKey>
     {
         var matches = FakeDatabase.Query(queryFunc)
             .ToList();
@@ -70,32 +99,44 @@ public class FakeUnitOfWorkRepository : IUnitOfWorkRepository
         return Task.FromResult(result);
     }
 
-    void IUnitOfWorkRepository.Add<TEntity>(TEntity entity)
+    public Task<Result<IReadOnlyList<TEntity>>> Query<TEntity>(Expression<Func<TEntity, bool>> queryFunc, CancellationToken cancellationToken)
+        where TEntity : class, IDataModel
+    {
+        return this.Query<TEntity, Guid>(queryFunc, cancellationToken);
+    }
+
+    public void Add<TEntity>(TEntity entity)
+        where TEntity : class, IDataModelBase
     {
         this.toAdd.Add(entity);
     }
 
-    void IUnitOfWorkRepository.AddMany<TEntity>(IReadOnlyCollection<TEntity> entities)
+    public void AddMany<TEntity>(IReadOnlyCollection<TEntity> entities)
+        where TEntity : class, IDataModelBase
     {
         this.toAdd.AddRange(entities);
     }
 
-    void IUnitOfWorkRepository.Remove<TEntity>(TEntity entity)
+    public void Remove<TEntity>(TEntity entity)
+        where TEntity : class, IDataModelBase
     {
         this.toRemove.Add(entity);
     }
 
-    void IUnitOfWorkRepository.RemoveMany<TEntity>(IReadOnlyCollection<TEntity> entities)
+    public void RemoveMany<TEntity>(IReadOnlyCollection<TEntity> entities)
+        where TEntity : class, IDataModelBase
     {
         this.toRemove.AddRange(entities);
     }
 
-    void IUnitOfWorkRepository.Update<TEntity>(TEntity entity)
+    public void Update<TEntity>(TEntity entity)
+        where TEntity : class, IDataModelBase
     {
         this.toUpdate.Add(entity);
     }
 
-    void IUnitOfWorkRepository.UpdateMany<TEntity>(IReadOnlyCollection<TEntity> entities)
+    public void UpdateMany<TEntity>(IReadOnlyCollection<TEntity> entities)
+        where TEntity : class, IDataModelBase
     {
         this.toUpdate.AddRange(entities);
     }

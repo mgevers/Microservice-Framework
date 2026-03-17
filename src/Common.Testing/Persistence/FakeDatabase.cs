@@ -40,7 +40,7 @@ public sealed class FakeDatabase : IDisposable
     public static DatabaseState DatabaseState => new(Data.Values.SelectMany(e => e).ToList());
 
     public static Result<TEntity> InsertEntity<TEntity>(TEntity entity)
-        where TEntity : IDataModel
+        where TEntity : IDataModelBase
     {
         if (IsReadOnly)
         {
@@ -48,11 +48,11 @@ public sealed class FakeDatabase : IDisposable
         }
 
         var entities = GetEntityData(typeof(TEntity));
-        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).Id.Equals(entity.Id));
+        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
 
         if (existingEntity != null)
         {
-            return Result<TEntity>.Conflict($"conflict - entity with id {entity.Id} already exists");
+            return Result<TEntity>.Conflict($"conflict - entity with id {entity.GetId()} already exists");
         }
 
         entities.Add(entity);
@@ -60,7 +60,7 @@ public sealed class FakeDatabase : IDisposable
     }
 
     public static Result<TEntity> UpdateEntity<TEntity>(TEntity entity)
-        where TEntity : IDataModel
+        where TEntity : IDataModelBase
     {
         if (IsReadOnly)
         {
@@ -68,9 +68,9 @@ public sealed class FakeDatabase : IDisposable
         }
 
         var entities = GetEntityData(typeof(TEntity));
-        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).Id.Equals(entity.Id));
+        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
 
-        if (existingEntity == null )
+        if (existingEntity == null)
         {
             return Result<TEntity>.Conflict("cannot update entity - not found");
         }
@@ -84,8 +84,9 @@ public sealed class FakeDatabase : IDisposable
         return Result.Success(entity);
     }
 
+
     public static Result<TEntity> UpsertEntity<TEntity>(TEntity entity)
-        where TEntity : IDataModel
+        where TEntity : IDataModelBase
     {
         if (IsReadOnly)
         {
@@ -93,7 +94,7 @@ public sealed class FakeDatabase : IDisposable
         }
 
         var entities = GetEntityData(typeof(TEntity));
-        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).Id.Equals(entity.Id));
+        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
 
         if (existingEntity != null)
         {
@@ -125,7 +126,7 @@ public sealed class FakeDatabase : IDisposable
     }
 
     public static Result DeleteEntity<TEntity>(TEntity entity)
-        where TEntity : IDataModel
+        where TEntity : IDataModelBase
     {
         if (IsReadOnly)
         {
@@ -133,7 +134,7 @@ public sealed class FakeDatabase : IDisposable
         }
 
         var entities = GetEntityData(typeof(TEntity));
-        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).Id.Equals(entity.Id));
+        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
 
         if (existingEntity == null)
         {
