@@ -2,7 +2,7 @@
 
 public interface IDataModel : IDataModel<Guid> { }
 
-public interface IDataModel<out TKey> : IDataModelBase
+public interface IDataModel<TKey> : IDataModelBase
 {
     TKey Id { get; }
 }

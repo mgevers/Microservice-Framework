@@ -3,8 +3,8 @@ using Common.LanguageExtensions.Contracts;
 
 namespace Common.Testing.Persistence;
 
-public class FakeRepository<TEntity> : IRepository<TEntity>
-    where TEntity : IDataModel
+public class FakeRepository<TEntity, TKey> : IRepository<TEntity, TKey>
+    where TEntity : IDataModel<TKey>
 {
     public IReadOnlyList<TEntity> Entities => FakeDatabase.Query<TEntity>();
 
@@ -19,9 +19,9 @@ public class FakeRepository<TEntity> : IRepository<TEntity>
         return Task.FromResult(result);
     }
 
-    public Task<Result<TEntity>> LoadById(Guid id, CancellationToken cancellationToken = default)
+    public Task<Result<TEntity>> LoadById(TKey id, CancellationToken cancellationToken = default)
     {
-        var match = FakeDatabase.Query<TEntity>(entity => entity.Id == id)
+        var match = FakeDatabase.Query<TEntity>(entity => entity.Id!.Equals(id))
             .SingleOrDefault();
 
         var result = match != null
@@ -31,7 +31,7 @@ public class FakeRepository<TEntity> : IRepository<TEntity>
         return Task.FromResult(result);
     }
 
-    public Task<Result<IReadOnlyList<TEntity>>> LoadByIds(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    public Task<Result<IReadOnlyList<TEntity>>> LoadByIds(IReadOnlyCollection<TKey> ids, CancellationToken cancellationToken = default)
     {
         var matches = FakeDatabase.Query<TEntity>(entity => ids.Contains(entity.Id))
             .ToList();
@@ -57,4 +57,9 @@ public class FakeRepository<TEntity> : IRepository<TEntity>
     {
         return Task.FromResult(FakeDatabase.DeleteEntity(entity));
     }
+}
+
+public class FakeRepository<TEntity> : FakeRepository<TEntity, Guid>, IRepository<TEntity>
+    where TEntity : IDataModel
+{
 }

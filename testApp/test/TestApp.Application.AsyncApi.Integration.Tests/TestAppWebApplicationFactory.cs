@@ -18,7 +18,7 @@ public class TestAppWebApplicationFactory : WebAppFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             services
-                .AddSingleton<IRepository<Character>, FakeRepository<Character>>()
+                .AddSingleton<IRepository<Character, Guid>, FakeRepository<Character>>()
                 .AddSingleton<IMessageSession, FakeMessageSession>();
         });
     }

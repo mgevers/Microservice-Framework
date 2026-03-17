@@ -5,11 +5,12 @@ using System.Linq.Expressions;
 
 namespace Common.Infrastructure.Persistence.EntityFramework;
 
-public class EFUnitOfWorkRepository : IUnitOfWorkRepository
+public class EFUnitOfWorkRepository<TDbContext> : IUnitOfWorkRepository
+    where TDbContext : DbContext
 {
-    private readonly DbContext dbContext;
+    protected readonly TDbContext dbContext;
 
-    public EFUnitOfWorkRepository(DbContext dbContext)
+    public EFUnitOfWorkRepository(TDbContext dbContext)
     {
         this.dbContext = dbContext;
     }
