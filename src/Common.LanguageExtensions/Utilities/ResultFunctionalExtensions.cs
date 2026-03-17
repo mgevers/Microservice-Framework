@@ -18,20 +18,38 @@ public static class ResultFunctionalExtensions
 
         switch (result.Status)
         {
+            case ResultStatus.Conflict:
+                return errors.Count == 1
+                    ? Result.Conflict(errors.Single())
+                    : Result.Conflict(string.Concat(errors, ","));
             case ResultStatus.Error:
-                return Result.Error(new ErrorList(errors));
+                return errors.Count == 1
+                    ? Result.Error(errors.Single())
+                    : Result.Error(new ErrorList(errors));
             case ResultStatus.Forbidden:
-                return Result.Forbidden(string.Concat(errors, ","));
+                return errors.Count == 1
+                    ? Result.Forbidden(errors.Single())
+                    : Result.Forbidden(string.Concat(errors, ","));
             case ResultStatus.Invalid:
-                return Result.Invalid(new ValidationError(string.Concat(errors, ",")));
+                return errors.Count == 1
+                    ? Result.Invalid(new ValidationError(errors.Single()))
+                    : Result.Invalid(new ValidationError(string.Concat(errors, ",")));
             case ResultStatus.NotFound:
-                return Result.NotFound(string.Concat(errors, ","));
+                return errors.Count == 1
+                    ? Result.NotFound(errors.Single())
+                    : Result.NotFound(string.Concat(errors, ","));
             case ResultStatus.Unauthorized:
-                return Result.Unauthorized(string.Concat(errors, ","));
+                return errors.Count == 1
+                    ? Result.Unauthorized(errors.Single())
+                    : Result.Unauthorized(string.Concat(errors, ","));
             case ResultStatus.Unavailable:
-                return Result.Unavailable([.. errors]);
+                return errors.Count == 1
+                    ? Result.Unavailable(errors.Single())
+                    : Result.Unavailable([.. errors]);
             default:
-                return Result.CriticalError([.. errors]);
+                return errors.Count == 1
+                    ? Result.CriticalError(errors.Single())
+                    : Result.CriticalError([.. errors]);
         }
     }
 
@@ -48,24 +66,42 @@ public static class ResultFunctionalExtensions
 
         switch (result.Status)
         {
+            case ResultStatus.Conflict:
+                return errors.Count == 1
+                    ? Result.Conflict(errors.Single())
+                    : Result.Conflict(string.Concat(errors, ","));
             case ResultStatus.Error:
-                return Result.Error(new ErrorList(errors));
+                return errors.Count == 1
+                    ? Result.Error(errors.Single())
+                    : Result.Error(new ErrorList(errors));
             case ResultStatus.Forbidden:
-                return Result.Forbidden(string.Concat(errors, ","));
+                return errors.Count == 1
+                    ? Result.Forbidden(errors.Single())
+                    : Result.Forbidden(string.Concat(errors, ","));
             case ResultStatus.Invalid:
-                return Result.Invalid(new ValidationError(string.Concat(errors, ",")));
+                return errors.Count == 1
+                    ? Result.Invalid(new ValidationError(errors.Single()))
+                    : Result.Invalid(new ValidationError(string.Concat(errors, ",")));
             case ResultStatus.NotFound:
-                return Result.NotFound(string.Concat(errors, ","));
+                return errors.Count == 1
+                    ? Result.NotFound(errors.Single())
+                    : Result.NotFound(string.Concat(errors, ","));
             case ResultStatus.Unauthorized:
-                return Result.Unauthorized(string.Concat(errors, ","));
+                return errors.Count == 1
+                    ? Result.Unauthorized(errors.Single())
+                    : Result.Unauthorized(string.Concat(errors, ","));
             case ResultStatus.Unavailable:
-                return Result.Unavailable([.. errors]);
+                return errors.Count == 1
+                    ? Result.Unavailable(errors.Single())
+                    : Result.Unavailable([.. errors]);
             default:
-                return Result.CriticalError([.. errors]);
+                return errors.Count == 1
+                    ? Result.CriticalError(errors.Single())
+                    : Result.CriticalError([.. errors]);
         }
     }
 
-    public static Result<KeyValuePair<T, K>> Combine<T,K>(this Result<T> result1, Func<T, Result<K>> func)
+    public static Result<KeyValuePair<T, K>> Combine<T, K>(this Result<T> result1, Func<T, Result<K>> func)
     {
         if (!result1.IsSuccess)
         {
@@ -118,7 +154,7 @@ public static class ResultFunctionalExtensions
         string errorMessage = string.Join(
             errorMessagesSeparator ?? Configuration.ErrorMessagesSeparator,
             AggregateMessages(failedResults.SelectMany(x => x.Errors)));
-        
+
         return Result.CriticalError(errorMessage);
     }
 
@@ -356,7 +392,45 @@ public static class ResultFunctionalExtensions
             return Result.Success();
         }
 
-        return Result.CriticalError([.. result.Errors]);
+        IReadOnlyCollection<string> errors = result.Errors
+            .Concat(result.ValidationErrors.Select(e => e.ErrorMessage))
+            .ToList();
+
+        switch (result.Status)
+        {
+            case ResultStatus.Conflict:
+                return errors.Count == 1
+                    ? Result.Conflict(errors.Single())
+                    : Result.Conflict(string.Concat(errors, ","));
+            case ResultStatus.Error:
+                return errors.Count == 1
+                    ? Result.Error(errors.Single())
+                    : Result.Error(new ErrorList(errors));
+            case ResultStatus.Forbidden:
+                return errors.Count == 1
+                    ? Result.Forbidden(errors.Single())
+                    : Result.Forbidden(string.Concat(errors, ","));
+            case ResultStatus.Invalid:
+                return errors.Count == 1
+                    ? Result.Invalid(new ValidationError(errors.Single()))
+                    : Result.Invalid(new ValidationError(string.Concat(errors, ",")));
+            case ResultStatus.NotFound:
+                return errors.Count == 1
+                    ? Result.NotFound(errors.Single())
+                    : Result.NotFound(string.Concat(errors, ","));
+            case ResultStatus.Unauthorized:
+                return errors.Count == 1
+                    ? Result.Unauthorized(errors.Single())
+                    : Result.Unauthorized(string.Concat(errors, ","));
+            case ResultStatus.Unavailable:
+                return errors.Count == 1
+                    ? Result.Unavailable(errors.Single())
+                    : Result.Unavailable([.. errors]);
+            default:
+                return errors.Count == 1
+                    ? Result.CriticalError(errors.Single())
+                    : Result.CriticalError([.. errors]);
+        }
     }
 
     public static async Task<Result> AsResult<T>(this Task<Result<T>> resultTask)
