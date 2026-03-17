@@ -35,3 +35,15 @@ public class HandlerTestSetup<THandler> : HandlerTestSetup
     {
     }
 }
+
+public class HandlerTestSetup<THandler, TResult> : HandlerTestSetup
+{
+    public HandlerTestSetup(
+        DatabaseState databaseState,
+        bool isReadOnlyDatabase,
+        FakeLoggingConfiguration? loggingConfiguration = null,
+        Action<AutoMocker>? configureMocker = null)
+        : base(databaseState, isReadOnlyDatabase, loggingConfiguration, configureMocker)
+    {
+    }
+}

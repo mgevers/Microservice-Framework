@@ -40,4 +40,34 @@ public static class RequestHandlerTest
                 FakeLoggingDatabase.Logs.ToList());
         }        
     }
+
+    public static async Task<RequestHandlerTestResult<TRequestHandler, TResult>> Handle<TRequest, TRequestHandler, TResult>(
+        this HandlerTestSetup<TRequestHandler, TResult> testSetup,
+        TRequest request)
+        where TRequest : IRequest<Result<TResult>>
+        where TRequestHandler : class, IRequestHandler<TRequest, Result<TResult>>
+    {
+        var messageSession = new TestableMessageSession();
+        var mocker = new AutoMocker();
+        testSetup.ConfigureMocker?.Invoke(mocker);
+        mocker.Use<IMessageSession>(messageSession);
+
+        using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
+        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
+        {
+            var handler = mocker.GetRequiredService<TRequestHandler>();
+            var result = await handler!.Handle(request, CancellationToken.None);
+            var busState = new ServiceBusState(
+                sentMessages: messageSession.SentMessages.Select(m => m.Message).Cast<IMessage>().ToList(),
+                publishedMessages: messageSession.PublishedMessages.Select(m => m.Message).Cast<IMessage>().ToList(),
+                repliedMessages: Array.Empty<IMessage>());
+
+            return new RequestHandlerTestResult<TRequestHandler, TResult>(
+                FakeDatabase.DatabaseState,
+                busState,
+                mocker,
+                result,
+                FakeLoggingDatabase.Logs.ToList());
+        }
+    }
 }

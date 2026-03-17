@@ -67,3 +67,36 @@ public class RequestHandlerTestResult<THandler> :
 
     public IReadOnlyList<LogEntry> Logs { get; }
 }
+
+public class RequestHandlerTestResult<THandler, TResult> :
+    IRepsitoryTestResult,
+    IServiceBusTestResult,
+    IAutoMockerTestResult,
+    ITestOutput<Result<TResult>>,
+    IExceptionTestResult,
+    ILoggingTestResult
+{
+    public RequestHandlerTestResult(
+        DatabaseState databaseState,
+        ServiceBusState serviceBusMessages,
+        AutoMocker autoMocker,
+        Result<TResult> output,
+        IReadOnlyList<LogEntry> logs,
+        Exception? exceptionThrown = null)
+    {
+        DatabaseState = databaseState;
+        ServiceBusState = serviceBusMessages;
+        AutoMocker = autoMocker;
+        Output = output;
+        Logs = logs;
+        ExceptionThrown = exceptionThrown;
+    }
+
+    public DatabaseState DatabaseState { get; }
+    public ServiceBusState ServiceBusState { get; }
+    public AutoMocker AutoMocker { get; }
+    public Result<TResult> Output { get; }
+    public Exception? ExceptionThrown { get; }
+
+    public IReadOnlyList<LogEntry> Logs { get; }
+}
