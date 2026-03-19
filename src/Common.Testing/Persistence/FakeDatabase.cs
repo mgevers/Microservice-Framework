@@ -46,7 +46,7 @@ public sealed class FakeDatabase : IDisposable
             return errorResult.Value;
         }
 
-        var entities = GetEntityData(typeof(TEntity));
+        var entities = GetEntityData(entity.GetType());
         var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
 
         if (existingEntity != null)
@@ -66,7 +66,7 @@ public sealed class FakeDatabase : IDisposable
             return errorResult.Value;
         }
 
-        var entities = GetEntityData(typeof(TEntity));
+        var entities = GetEntityData(entity.GetType());
         var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
 
         if (existingEntity == null)
@@ -74,15 +74,11 @@ public sealed class FakeDatabase : IDisposable
             return Result<TEntity>.Conflict("cannot update entity - not found");
         }
 
-        if (existingEntity != null)
-        {
-            entities.Remove(existingEntity);
-        }
-
+        entities.Remove(existingEntity);
         entities.Add(entity);
+
         return Result.Success(entity);
     }
-
 
     public static Result<TEntity> UpsertEntity<TEntity>(TEntity entity)
         where TEntity : IDataModelBase
@@ -92,7 +88,7 @@ public sealed class FakeDatabase : IDisposable
             return errorResult.Value;
         }
 
-        var entities = GetEntityData(typeof(TEntity));
+        var entities = GetEntityData(entity.GetType());
         var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
 
         if (existingEntity != null)
@@ -132,7 +128,7 @@ public sealed class FakeDatabase : IDisposable
             return errorResult.Value;
         }
 
-        var entities = GetEntityData(typeof(TEntity));
+        var entities = GetEntityData(entity.GetType());
         var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
 
         if (existingEntity == null)

@@ -21,6 +21,7 @@ public static class DeepEqualSerializer
 
         var jsonSerializerSettings = new JsonSerializerSettings() {
             ContractResolver = contractResolver,
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
         };
 
         string rawJson = JsonConvert.SerializeObject(value: value, settings: jsonSerializerSettings);
