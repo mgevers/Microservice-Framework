@@ -31,6 +31,8 @@ public static class RequestHandlerTest
         using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
         using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.DatabaseError))
         {
+            mocker.Use<IMediator>(fakeMediator);
+
             var handler = mocker.GetRequiredService<TRequestHandler>();
             var result = await handler!.Handle(request, CancellationToken.None);
             var nServiceBusState = new ServiceBusState(
