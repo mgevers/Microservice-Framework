@@ -1,5 +1,4 @@
 ﻿using MediatR;
-using System.Threading.Channels;
 
 namespace Common.Testing.Mediator;
 

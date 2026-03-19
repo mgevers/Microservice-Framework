@@ -1,6 +1,6 @@
 ﻿using Ardalis.Result;
 using Common.LanguageExtensions.Contracts;
-using Common.LanguageExtensions.Utilities;
+using Common.LanguageExtensions.Utilities.ResultExtensions;
 using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;

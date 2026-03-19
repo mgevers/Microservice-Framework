@@ -1,5 +1,4 @@
 ﻿using Common.Infrastructure.Mediator;
-using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 

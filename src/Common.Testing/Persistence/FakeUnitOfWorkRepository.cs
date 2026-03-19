@@ -1,6 +1,6 @@
 ﻿using Ardalis.Result;
 using Common.LanguageExtensions.Contracts;
-using Common.LanguageExtensions.Utilities;
+using Common.LanguageExtensions.Utilities.ResultExtensions;
 using System.Linq.Expressions;
 
 namespace Common.Testing.Persistence;
