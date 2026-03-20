@@ -9,7 +9,6 @@ public class FakeLoggingConfiguration
     public FakeLoggingConfiguration(LogLevel defaultLogLevel = LogLevel.Error)
     {
         DefaultLogLevel = defaultLogLevel;
-        _categoryLogLevels.Add("MyVector", LogLevel.Trace);
     }
 
     public LogLevel DefaultLogLevel { get; init; }
