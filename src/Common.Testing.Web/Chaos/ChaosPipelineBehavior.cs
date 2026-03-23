@@ -16,7 +16,7 @@ public class ChaosPipelineBehavior<TRequest, TResponse>(ChaosRequestManager chao
 
         if (hasCausedChaos)
         {
-            return next();
+            return next(cancellationToken);
         }
 
         chaosManager.ChaosMap[request] = true;
