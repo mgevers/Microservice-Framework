@@ -22,7 +22,7 @@ public class TestAppWebApplicationFactory : WebAppFactory<Program>
             services
                 .AddSingleton<IRepository<Character>, FakeRepository<Character>>()
                 .AddSingleton<IMessageSession, FakeMessageSession>()
-                .AddMediatRChaos(typeof(AddCharacterRequestHandler).Assembly);
+                .AddMediatRChaos();
         });
     }
 }
