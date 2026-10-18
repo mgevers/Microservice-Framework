@@ -27,9 +27,16 @@ public static class PostgresPersistenceExtensions
     /// Registers the context with Postgres, the audit trail that writes into it, and the readiness check.
     /// The migration history table is named after the context, so that services can share a server.
     /// </summary>
+    /// <param name="key">
+    /// For a host with several contexts. The health check is named <c>postgres-{key}</c>, and the audit trail is registered
+    /// keyed by it, with no unkeyed trail, so that a consumer that asks for one fails instead of writing into another context.
+    /// </param>
+    /// <param name="schema">For a host with several contexts. The schema of the migration history table.</param>
     public static IHostApplicationBuilder AddPostgresPersistence<TContext, TOptions>(
         this IHostApplicationBuilder builder,
-        Action<TOptions> config)
+        Action<TOptions> config,
+        string? key = null,
+        string? schema = null)
         where TContext : DbContext
         where TOptions : PostgresDbOptions
     {
@@ -45,15 +52,23 @@ public static class PostgresPersistenceExtensions
                 options.UseNpgsql(dbOptions.Value.ConnectionString, npgsql =>
                 {
                     npgsql.MigrationsAssembly(typeof(TContext).Assembly.GetName().Name);
-                    npgsql.MigrationsHistoryTable($"__{typeof(TContext).Name}");
+                    npgsql.MigrationsHistoryTable($"__{typeof(TContext).Name}", schema);
                     npgsql.EnableRetryOnFailure(5);
                 });
-            })
-            .AddScoped<IAuditTrail>(serviceProvider => new EfAuditTrail(serviceProvider.GetRequiredService<TContext>()));
+            });
+
+        if (key is null)
+        {
+            builder.Services.AddScoped<IAuditTrail>(serviceProvider => new EfAuditTrail(serviceProvider.GetRequiredService<TContext>()));
+        }
+        else
+        {
+            builder.Services.AddKeyedScoped<IAuditTrail>(key, (serviceProvider, _) => new EfAuditTrail(serviceProvider.GetRequiredService<TContext>()));
+        }
 
         builder.Services
             .AddHealthChecks()
-            .AddDbContextCheck<TContext>("postgres", tags: ["ready"]);
+            .AddDbContextCheck<TContext>(key is null ? "postgres" : $"postgres-{key}", tags: ["ready"]);
 
         return builder;
     }
