@@ -61,6 +61,7 @@ public static class PostgresPersistenceExtensions
     /// <summary>
     /// Migrates the database when the host starts, checks that every table is encrypted, and gives the API role
     /// <c>SELECT</c> on <paramref name="readTables"/> and <c>INSERT</c> on <paramref name="insertTables"/>, and nothing else.
+    /// The tables are those of the default schema of the context, or of <c>public</c> if it has none.
     /// Only the message processor calls this.
     /// </summary>
     public static IHostApplicationBuilder AddPostgresMigration<TContext, TOptions>(
@@ -75,7 +76,8 @@ public static class PostgresPersistenceExtensions
             var apiRole = services.GetRequiredService<IOptions<TOptions>>().Value.ApiRole;
             if (!string.IsNullOrWhiteSpace(apiRole))
             {
-                await PostgresTde.GrantApiRole(dbContext, apiRole, readTables, insertTables, cancellationToken);
+                var schema = dbContext.Model.GetDefaultSchema() ?? "public";
+                await PostgresTde.GrantApiRole(dbContext, schema, apiRole, readTables, insertTables, cancellationToken);
             }
         });
 

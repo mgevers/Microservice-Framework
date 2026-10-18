@@ -22,6 +22,13 @@ public class TdeDatabaseMigrator<TContext>(
         await dbContext.Database.MigrateAsync(cancellationToken);
         await PostgresTde.EnsureTablesAreEncrypted(dbContext, cancellationToken);
 
+        // A context with its own schema keeps its tables there, so that schema is checked too.
+        var schema = dbContext.Model.GetDefaultSchema();
+        if (schema is not null && schema != "public")
+        {
+            await PostgresTde.EnsureTablesAreEncrypted(dbContext, schema, cancellationToken);
+        }
+
         if (afterMigration is not null)
         {
             await afterMigration(scope.ServiceProvider, dbContext, cancellationToken);
