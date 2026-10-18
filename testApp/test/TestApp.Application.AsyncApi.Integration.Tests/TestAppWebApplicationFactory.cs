@@ -1,4 +1,4 @@
-﻿using Common.LanguageExtensions.Contracts;
+﻿using Common.Infrastructure.Persistence;
 using Common.Testing.Persistence;
 using Common.Testing.ServiceBus;
 using Common.Testing.Web;
@@ -18,7 +18,7 @@ public class TestAppWebApplicationFactory : WebAppFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             services
-                .AddSingleton<IRepository<Character, Guid>, FakeRepository<Character>>()
+                .AddSingleton<IRepository<Character>, FakeRepository<Character>>()
                 .AddSingleton<IMessageSession, FakeMessageSession>();
         });
     }

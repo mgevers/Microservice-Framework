@@ -1,5 +1,4 @@
 ﻿using Ardalis.Result;
-using Common.LanguageExtensions.Contracts;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using A = Ardalis.Result;
@@ -80,7 +79,7 @@ public class ElasticsearchRepository<TEntity> : IElasticsearchRepository<TEntity
             return A.Result<TEntity>.Success(response.Source);
         }
 
-        return A.Result<TEntity>.Error(response.ElasticsearchServerError?.Error?.Reason);
+        return A.Result<TEntity>.Error(response.ElasticsearchServerError?.Error.Reason);
     }
 
     public async Task<Result<IReadOnlyList<TEntity>>> LoadByIds(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
@@ -113,7 +112,7 @@ public class ElasticsearchRepository<TEntity> : IElasticsearchRepository<TEntity
 
     public async Task<Result<TEntity>> Create(TEntity entity, CancellationToken cancellationToken = default)
     {
-        var request = new IndexRequest<TEntity>(entity, index: IndexName, entity.Id);
+        var request = new IndexRequest<TEntity>(entity, index: IndexName, id: entity.Id);
         var response = await client.IndexAsync(request, cancellationToken);
 
         if (response.IsSuccess())

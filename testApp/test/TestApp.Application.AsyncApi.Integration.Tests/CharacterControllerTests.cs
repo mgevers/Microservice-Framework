@@ -1,15 +1,14 @@
 ﻿using Common.LanguageExtensions;
+using Common.Testing.FluentTesting;
 using Common.Testing.Integration.FluentTesting;
 using Common.Testing.Persistence;
 using Common.Testing.Web.Auth;
 using Common.Testing.Web.FluentTesting;
-using Common.Testing.FluentTesting.Asserts;
 using System.Net;
 using System.Security.Claims;
 using TestApp.Core.Boundary;
 using TestApp.Tests;
 using Xunit;
-using Ardalis.Result;
 
 namespace TestApp.Application.AsyncApi.Integration.Tests;
 
@@ -22,10 +21,9 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
     {
         var character = DataModels.CreateCharacter();
         var command = new AddCharacterCommand(character.Id, character.Name);
-        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
         await 
-            Arrange(authToken: authToken)
+            Arrange(jwt: FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123")))
             .Act(httpClient => httpClient.PostAsync("api/characters", command))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.Accepted)
             .AssertDatabase(DatabaseState.Empty)
@@ -52,12 +50,11 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var id = Guid.NewGuid();
         var character = DataModels.CreateCharacter(id);
         var command = new UpdateCharacterCommand(id, "new name");
-        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
         await
             Arrange(
                 databaseState: new DatabaseState(character),
-                authToken: authToken)
+                jwt: FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123")))
             .Act(httpClient => httpClient.PutAsync("api/characters", command))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.Accepted)
             .AssertDatabase(new DatabaseState(character))
@@ -83,12 +80,11 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
     {
         var character = DataModels.CreateCharacter();
         var command = new RemoveCharacterRequest(character.Id);
-        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
         await
             Arrange(
                 databaseState: new DatabaseState(character),
-                authToken: authToken)
+                jwt: FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123")))
             .Act(httpClient => httpClient.DeleteAsync("api/characters", command))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.Accepted)
             .AssertDatabase(new DatabaseState(character))
@@ -111,13 +107,13 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
 
     private ApiTestSetup<TestAppWebApplicationFactory, Program> Arrange(
         DatabaseState? databaseState = null,
-        Result? databaseError = null,
-        string? authToken = null)
+        bool isReadOnlyDatabase = false,
+        string? jwt = null)
     {
-        return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithAuthToken(
-            factory,
-            databaseState,
-            authToken,
-            databaseError);
+        return new ApiTestSetup<TestAppWebApplicationFactory, Program>(
+            this.factory,
+            databaseState ?? DatabaseState.Empty,
+            isReadOnlyDatabase,
+            jwt);
     }
 }

@@ -1,43 +1,12 @@
 ﻿using Ardalis.Result;
-using Common.LanguageExtensions.Contracts;
-using Common.LanguageExtensions.Utilities.ResultExtensions;
-using MassTransit;
+using Common.Infrastructure.Persistence;
+using Common.LanguageExtensions.Utilities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using TestApp.Core.Boundary;
 using TestApp.Core.Domain;
 
 namespace TestApp.Core.CommandHandlers;
-
-public class AddCharacterConsumer : IConsumer<AddCharacterCommand>
-{
-    private readonly IRepository<Character> repository;
-    private readonly ILogger<AddCharacterConsumer> logger;
-
-    public AddCharacterConsumer(IRepository<Character> repository, ILogger<AddCharacterConsumer> logger)
-    {
-        this.repository = repository;
-        this.logger = logger;
-    }
-
-    public async Task Consume(ConsumeContext<AddCharacterCommand> context)
-    {
-        logger.LogInformation("received command: {command}", nameof(AddCharacterCommand));
-        var character = new Character(context.Message.CharacterId, context.Message.Name);
-
-        await repository.Create(character, context.CancellationToken)
-            .Tap(() => context.Publish(new CharacterAddedEvent(context.Message.CharacterId)));
-    }
-
-    public async Task Handle(AddCharacterCommand message, IMessageHandlerContext context)
-    {
-        logger.LogInformation("received command: {command}", nameof(AddCharacterCommand));
-        var character = new Character(message.CharacterId, message.Name);
-
-        await repository.Create(character, context.CancellationToken)
-            .Tap(() => context.Publish(new CharacterAddedEvent(message.CharacterId)));
-    }
-}
 
 public class AddCharacterCommandHandler : IHandleMessages<AddCharacterCommand>
 {
@@ -52,7 +21,7 @@ public class AddCharacterCommandHandler : IHandleMessages<AddCharacterCommand>
 
     public async Task Handle(AddCharacterCommand message, IMessageHandlerContext context)
     {
-        logger.LogInformation("received command: {command}", nameof(AddCharacterCommand));
+        logger.LogInformation($"received command: {nameof(AddCharacterCommand)}");
         var character = new Character(message.CharacterId, message.Name);
 
         await repository.Create(character, context.CancellationToken)
@@ -78,7 +47,7 @@ public class AddCharacterRequestHandler : IRequestHandler<AddCharacterRequest, R
 
     public async Task<Result> Handle(AddCharacterRequest request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("received command: {command}", nameof(AddCharacterRequest));
+        logger.LogInformation($"received command: {nameof(AddCharacterRequest)}");
         var character = new Character(request.CharacterId, request.Name);
 
         var result = await repository.Create(character, cancellationToken)

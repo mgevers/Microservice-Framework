@@ -24,9 +24,7 @@ public static class FakeAuthenticationServiceCollectionExtensions
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidIssuer = FakeJwtTokens.Issuer,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero,
+                    ValidateAudience = false
                 };
 
                 var config = new OpenIdConnectConfiguration()
@@ -38,7 +36,7 @@ public static class FakeAuthenticationServiceCollectionExtensions
                 options.Configuration = config;
                 options.TimeProvider = new FakeTimeProvider();
             })
-            .AddScoped<JwtBearerHandler, FakeJwtBearerHandler>();
+            .AddTransient<JwtBearerHandler, FakeJwtBearerHandler>();
     }
 
     public static IServiceCollection ConfigureFakeApiKeys(this IServiceCollection services)
@@ -65,36 +63,20 @@ public static class FakeAuthenticationServiceCollectionExtensions
             }
 
             var token = authorizationHeader["Bearer ".Length..].Trim();
-            var claimsResult = GetClaims(token, Options);
-
-            var result = claimsResult.Item1 == null
-                ? AuthenticateResult.Fail(claimsResult.Item2)
-                : AuthenticateResult.Success(new AuthenticationTicket(claimsResult.Item1, "CustomJwtBearer"));
+            var result = AuthenticateResult.Success(new AuthenticationTicket(GetClaims(token), "CustomJwtBearer"));
 
             return Task.FromResult(result);
         }
 
-        private static (ClaimsPrincipal?, string) GetClaims(string token, JwtBearerOptions options)
+        private static ClaimsPrincipal GetClaims(string Token)
         {
             var handler = new JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadToken(token) as JwtSecurityToken;
+            var token = handler.ReadToken(Token) as JwtSecurityToken;
 
-            if (jwtToken is null)
-            {
-                return (null, "Invalid JWT token format.");
-            }
-
-            var utcNow = options.TimeProvider?.GetUtcNow() ?? CurrentTime.UtcNow;
-
-            if (jwtToken.ValidTo < utcNow)
-            {
-                return (null, $"Jwt Token is expired. Valid to - {jwtToken.ValidTo}, current time is: {utcNow}");
-            }
-
-            var claimsIdentity = new ClaimsIdentity(jwtToken.Claims, "Token");
+            var claimsIdentity = new ClaimsIdentity(token!.Claims, "Token");
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
-            return (claimsPrincipal, string.Empty);
+            return claimsPrincipal;
         }
     }
 }

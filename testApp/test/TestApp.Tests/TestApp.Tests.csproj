@@ -7,6 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\src\Common.LanguageExtensions\Common.LanguageExtensions.csproj" />
     <ProjectReference Include="..\..\src\TestApp.Core\TestApp.Core.csproj" />
   </ItemGroup>

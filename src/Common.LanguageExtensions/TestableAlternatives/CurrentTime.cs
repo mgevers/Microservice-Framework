@@ -11,7 +11,7 @@
 
         public static DateTime UtcNow => MockUtcNow.Value ?? DateTime.UtcNow;
 
-        public static CurrentTime UseMotckUtcNow(DateTime mockUtcNow)
+        public static CurrentTime UseMockUtcNow(DateTime mockUtcNow)
         {
             return new CurrentTime(mockUtcNow);
         }

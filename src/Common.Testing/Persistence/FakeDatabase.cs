@@ -1,5 +1,5 @@
 ﻿using Ardalis.Result;
-using Common.LanguageExtensions.Contracts;
+using Common.Infrastructure.Persistence;
 using System.Linq.Expressions;
 
 namespace Common.Testing.Persistence;
@@ -7,14 +7,15 @@ namespace Common.Testing.Persistence;
 public sealed class FakeDatabase : IDisposable
 {
     private static readonly AsyncLocal<Dictionary<Type, List<object>>?> data = new();
-    private static readonly AsyncLocal<Result?> errorResult = new();
+    private static readonly AsyncLocal<bool?> isReadOnlyDatabase = new();
 
     public static Dictionary<Type, List<object>> Data => data.Value!;
+    public static bool IsReadOnly => isReadOnlyDatabase.Value!.Value;
 
-    private FakeDatabase(DatabaseState databaseState, Result? error)
+    private FakeDatabase(DatabaseState databaseState, bool isReadOnly)
     {
         data.Value = new Dictionary<Type, List<object>>();
-        errorResult.Value = error;
+        isReadOnlyDatabase.Value = isReadOnly;
 
         foreach (var entityType in databaseState.GetEntityTypes())
         {
@@ -31,27 +32,32 @@ public sealed class FakeDatabase : IDisposable
         }
     }
 
-    public static FakeDatabase SeedData(DatabaseState state, Result? error)
+    public static FakeDatabase SeedData(DatabaseState state, bool isReadOnlyDatabase)
     {
-        return new FakeDatabase(state, error);
+        return new FakeDatabase(state, isReadOnlyDatabase);
     }
 
     public static DatabaseState DatabaseState => new(Data.Values.SelectMany(e => e).ToList());
 
+    /// <summary>Adds an entity of any type. Use it for an entity that has no <see cref="IDataModel"/> id, such as one with a text id.</summary>
+    public static void AddEntity(object entity) => GetEntityData(entity.GetType()).Add(entity);
+
+    public static void RemoveEntity(object entity) => GetEntityData(entity.GetType()).Remove(entity);
+
     public static Result<TEntity> InsertEntity<TEntity>(TEntity entity)
-        where TEntity : IDataModelBase
+        where TEntity : IDataModel
     {
-        if (errorResult.Value is not null)
+        if (IsReadOnly)
         {
-            return errorResult.Value;
+            return Result<TEntity>.CriticalError("cannot write to readonly database");
         }
 
-        var entities = GetEntityData(entity.GetType());
-        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
+        var entities = GetEntityData(typeof(TEntity));
+        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).Id.Equals(entity.Id));
 
         if (existingEntity != null)
         {
-            return Result<TEntity>.Conflict($"conflict - entity with id {entity.GetId()} already exists");
+            return Result<TEntity>.Conflict($"conflict - entity with id {entity.Id} already exists");
         }
 
         entities.Add(entity);
@@ -59,37 +65,40 @@ public sealed class FakeDatabase : IDisposable
     }
 
     public static Result<TEntity> UpdateEntity<TEntity>(TEntity entity)
-        where TEntity : IDataModelBase
+        where TEntity : IDataModel
     {
-        if (errorResult.Value is not null)
+        if (IsReadOnly)
         {
-            return errorResult.Value;
+            return Result<TEntity>.CriticalError("cannot write to readonly database");
         }
 
-        var entities = GetEntityData(entity.GetType());
-        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
+        var entities = GetEntityData(typeof(TEntity));
+        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).Id.Equals(entity.Id));
 
-        if (existingEntity == null)
+        if (existingEntity == null )
         {
             return Result<TEntity>.Conflict("cannot update entity - not found");
         }
 
-        entities.Remove(existingEntity);
-        entities.Add(entity);
+        if (existingEntity != null)
+        {
+            entities.Remove(existingEntity);
+        }
 
+        entities.Add(entity);
         return Result.Success(entity);
     }
 
     public static Result<TEntity> UpsertEntity<TEntity>(TEntity entity)
-        where TEntity : IDataModelBase
+        where TEntity : IDataModel
     {
-        if (errorResult.Value is not null)
+        if (IsReadOnly)
         {
-            return errorResult.Value;
+            return Result<TEntity>.CriticalError("cannot write to readonly database");
         }
 
-        var entities = GetEntityData(entity.GetType());
-        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
+        var entities = GetEntityData(typeof(TEntity));
+        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).Id.Equals(entity.Id));
 
         if (existingEntity != null)
         {
@@ -121,15 +130,15 @@ public sealed class FakeDatabase : IDisposable
     }
 
     public static Result DeleteEntity<TEntity>(TEntity entity)
-        where TEntity : IDataModelBase
+        where TEntity : IDataModel
     {
-        if (errorResult.Value is not null)
+        if (IsReadOnly)
         {
-            return errorResult.Value;
+            return Result.CriticalError("cannot write to readonly database");
         }
 
-        var entities = GetEntityData(entity.GetType());
-        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).GetId().Equals(entity.GetId()));
+        var entities = GetEntityData(typeof(TEntity));
+        var existingEntity = entities.SingleOrDefault(e => ((TEntity)e).Id.Equals(entity.Id));
 
         if (existingEntity == null)
         {
@@ -143,7 +152,6 @@ public sealed class FakeDatabase : IDisposable
     public void Dispose()
     {
         data.Value = null;
-        errorResult.Value = null;
     }
 
     private static List<object> GetEntityData(Type entityType)

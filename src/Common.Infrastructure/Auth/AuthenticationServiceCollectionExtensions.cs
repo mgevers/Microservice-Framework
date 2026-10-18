@@ -10,6 +10,13 @@ namespace Common.Infrastructure.Auth;
 
 public static class AuthenticationServiceCollectionExtensions
 {
+    /// <summary>
+    /// The issuer that Auth0 and similar providers put in their tokens: https://domain/ with a trailing slash.
+    /// The domain can be a host name or a full https URL.
+    /// </summary>
+    public static string Issuer(string domain) =>
+        $"https://{domain.Replace("https://", string.Empty, StringComparison.OrdinalIgnoreCase).TrimEnd('/')}/";
+
     public static IServiceCollection AddJwtAndAPIKeyAuthentication(this IServiceCollection services, string domain, IReadOnlyCollection<string> audiences)
     {
         services
@@ -20,11 +27,11 @@ public static class AuthenticationServiceCollectionExtensions
             })
             .AddJwtBearer("Bearer", delegate (JwtBearerOptions c)
             {
-                c.Authority = "https://" + domain;
+                c.Authority = Issuer(domain);
                 c.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidAudiences = audiences,
-                    ValidIssuer = domain,
+                    ValidIssuer = Issuer(domain),
                     ValidateAudience = true,
                     ValidateIssuer = true,
                     ClockSkew = TimeSpan.FromMinutes(5.0),
@@ -70,6 +77,15 @@ public static class AuthenticationServiceCollectionExtensions
 
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, string domain, IReadOnlyCollection<string> audiences)
     {
+        return services.AddJwtAuthenticationForIssuer(Issuer(domain), audiences);
+    }
+
+    /// <summary>
+    /// For identity providers whose issuer is not https://domain/, such as Keycloak (https://host/realms/name).
+    /// The issuer is used as given, and the provider's discovery document is read from it.
+    /// </summary>
+    public static IServiceCollection AddJwtAuthenticationForIssuer(this IServiceCollection services, string issuer, IReadOnlyCollection<string> audiences)
+    {
         services
             .AddAuthentication(options =>
             {
@@ -78,11 +94,11 @@ public static class AuthenticationServiceCollectionExtensions
             })
             .AddJwtBearer("Bearer", delegate (JwtBearerOptions c)
             {
-                c.Authority = "https://" + domain;
+                c.Authority = issuer;
                 c.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidAudiences = audiences,
-                    ValidIssuer = domain,
+                    ValidIssuer = issuer,
                     ValidateAudience = true,
                     ValidateIssuer = true,
                     ClockSkew = TimeSpan.FromMinutes(5.0),
@@ -100,6 +116,8 @@ public static class AuthenticationServiceCollectionExtensions
         var options = new OAuthOptions();
         configure(options);
 
-        return services.AddJwtAuthentication(domain: options.Domain, audience: options.Audience);
+        return string.IsNullOrWhiteSpace(options.Issuer)
+            ? services.AddJwtAuthentication(domain: options.Domain, audience: options.Audience)
+            : services.AddJwtAuthenticationForIssuer(options.Issuer, [options.Audience]);
     }
 }

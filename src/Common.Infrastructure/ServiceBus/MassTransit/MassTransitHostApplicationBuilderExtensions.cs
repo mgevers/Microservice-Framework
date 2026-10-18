@@ -13,7 +13,8 @@ public static class MassTransitHostApplicationBuilderExtensions
         this IHostApplicationBuilder builder,
         Action<OutboxOptions> outboxConfig,
         Action<RabbitMqTransportOptions> rabbitConfig,
-        Action<IBusRegistrationConfigurator>? configureBus = null)
+        Action<IBusRegistrationConfigurator>? configureBus = null,
+        byte[]? messageEncryptionKey = null)
         where TDbContext : DbContext
     {
         builder.Services
@@ -29,7 +30,7 @@ public static class MassTransitHostApplicationBuilderExtensions
 
                 ConfigureOutbox<TDbContext>(config, outboxConfig);
 
-                ConfigureRabbitMq(config);
+                ConfigureRabbitMq(config, messageEncryptionKey);
                 configureBus?.Invoke(config);
             })
             .AddSendObserver<SendObserver>()
@@ -43,7 +44,8 @@ public static class MassTransitHostApplicationBuilderExtensions
     public static IHostApplicationBuilder SetupMassTransit(
         this IHostApplicationBuilder builder,
         Action<RabbitMqTransportOptions> rabbitConfig,
-        Action<IBusRegistrationConfigurator>? configureBus = null)
+        Action<IBusRegistrationConfigurator>? configureBus = null,
+        byte[]? messageEncryptionKey = null)
     {
         builder.Services
             .AddOptions<RabbitMqTransportOptions>()
@@ -56,7 +58,7 @@ public static class MassTransitHostApplicationBuilderExtensions
                 config.SetInMemorySagaRepositoryProvider();
                 config.SetKebabCaseEndpointNameFormatter();
 
-                ConfigureRabbitMq(config);
+                ConfigureRabbitMq(config, messageEncryptionKey);
                 configureBus?.Invoke(config);
             })
             .AddSendObserver<SendObserver>()
@@ -67,27 +69,27 @@ public static class MassTransitHostApplicationBuilderExtensions
         return builder;
     }
 
-    private static void ConfigureRabbitMq(IBusRegistrationConfigurator config)
+    private static void ConfigureRabbitMq(IBusRegistrationConfigurator config, byte[]? messageEncryptionKey)
     {
         config.UsingRabbitMq((busContext, rabbitConfig) =>
         {
-            ConfigureTransportDefaults(busContext, rabbitConfig);
-        });
-    }
+            rabbitConfig.UseNewtonsoftJsonSerializer();
+            rabbitConfig.UseNewtonsoftJsonDeserializer();
 
-    private static void ConfigureTransportDefaults<T>(IBusRegistrationContext busContext, IBusFactoryConfigurator<T> config)
-        where T : IReceiveEndpointConfigurator
-    {
-        config.UseNewtonsoftJsonSerializer();
-        config.UseNewtonsoftJsonDeserializer();
+            // With a key (AES-256), every message body is encrypted, so RabbitMQ stores it encrypted too.
+            if (messageEncryptionKey is not null)
+            {
+                rabbitConfig.UseEncryption(messageEncryptionKey);
+            }
 
-        config.ConfigureEndpoints(busContext);
-        config.AutoStart = true;
+            rabbitConfig.ConfigureEndpoints(busContext);
+            rabbitConfig.AutoStart = true;
 
-        config.UseMessageRetry(retry =>
-        {
-            retry.Immediate(5);
-            retry.Interval(5, 2);
+            rabbitConfig.UseMessageRetry(retry =>
+            {
+                retry.Immediate(5);
+                retry.Interval(5, 2);
+            });
         });
     }
 
@@ -101,7 +103,15 @@ public static class MassTransitHostApplicationBuilderExtensions
 
         config.AddEntityFrameworkOutbox<TDbContext>(outboxConfig =>
         {
-            outboxConfig.UseSqlServer();
+            if (options.Provider == OutboxDatabaseProvider.PostgreSql)
+            {
+                outboxConfig.UsePostgres();
+            }
+            else
+            {
+                outboxConfig.UseSqlServer();
+            }
+
             outboxConfig.UseBusOutbox();
 
             outboxConfig.QueryDelay = TimeSpan.FromSeconds(1);

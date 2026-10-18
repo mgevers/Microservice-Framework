@@ -27,8 +27,8 @@ public sealed class FakeServiceBus : IDisposable
     private static ServiceBusState GetServiceBusState()
     {
         return new ServiceBusState(
-            sentMessages: Session.SentMessages.Select(m => m.Message).Cast<IMessage>().ToList(),
-            publishedMessages: Session.PublishedMessages.Select(m => m.Message).Cast<IMessage>().ToList(),
+            sentMessages: Session.SentMessages.Select(m => m.Message).ToList(),
+            publishedMessages: Session.PublishedMessages.Select(m => m.Message).ToList(),
             repliedMessages: Array.Empty<IMessage>());
     }
 

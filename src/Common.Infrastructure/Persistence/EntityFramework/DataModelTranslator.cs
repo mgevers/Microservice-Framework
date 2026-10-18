@@ -1,5 +1,4 @@
-﻿using Common.LanguageExtensions.Contracts;
-using CSharpFunctionalExtensions;
+﻿using CSharpFunctionalExtensions;
 
 namespace Common.Infrastructure.Persistence.EntityFramework;
 

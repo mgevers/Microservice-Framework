@@ -4,7 +4,6 @@ using Newtonsoft.Json;
 using NServiceBus.Transport;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using NServiceBus.Settings;
 
 namespace Common.Infrastructure.ServiceBus.NServiceBus.Configuration;
 
@@ -22,7 +21,7 @@ public static class EndpointConfigurationFactory
             endpointName,
             options,
             typesToScan: new[] { typeof(CallbackCommandHandler) },
-            configureTransportDelegate: transport => transport.Routing().RouteToEndpoint(commandAssembly, destinationEndpointName));
+            configureRoutingDelegate: routing => routing.RouteToEndpoint(commandAssembly, destinationEndpointName));
 
         return endpointConfiguration;
     }
@@ -40,12 +39,12 @@ public static class EndpointConfigurationFactory
         string endpointName,
         NServiceBusOptions nServiceBusSettings,
         IReadOnlyCollection<Type> typesToScan,
-        Action<TransportExtensions<T>>? configureTransportDelegate = null)
+        Action<RoutingSettings>? configureRoutingDelegate = null)
         where T : TransportDefinition
     {
         var endpointConfiguration = new EndpointConfiguration(endpointName);
 
-        ConfigureTransport(endpointConfiguration, nServiceBusSettings, configureTransportDelegate);
+        ConfigureTransport<T>(endpointConfiguration, nServiceBusSettings, configureRoutingDelegate);
         ConfigureSerialization(endpointConfiguration);
         ConfigureRetries(endpointConfiguration, nServiceBusSettings);
         ConfigureAssemblyScanner(endpointConfiguration, typesToScan);
@@ -56,46 +55,25 @@ public static class EndpointConfigurationFactory
 
     private static void ConfigureTransport<T>(EndpointConfiguration configuration,
         NServiceBusOptions nServiceBusSettings,
-        Action<TransportExtensions<T>>? configureTransportDelegate)
+        Action<RoutingSettings>? configureRoutingDelegate)
         where T : TransportDefinition
     {
         Type transportType = typeof(T);
 
         if (transportType == typeof(AzureServiceBusTransport))
         {
-            ConfigureAzureServiceBusTransport(configuration, nServiceBusSettings, configureTransportDelegate as Action<TransportExtensions<AzureServiceBusTransport>>);
+            var transport = new AzureServiceBusTransport(nServiceBusSettings.AzureConnectionString!, TopicTopology.Default);
+
+            configureRoutingDelegate?.Invoke(configuration.UseTransport(transport));
         }
         else if (transportType == typeof(LearningTransport))
         {
-            ConfigureLearningTransport(configuration, nServiceBusSettings, configureTransportDelegate as Action<TransportExtensions<LearningTransport>>);
+            configureRoutingDelegate?.Invoke(configuration.UseTransport(new LearningTransport()));
         }
         else
         {
             throw new NotSupportedException($"transport: {transportType.Name} not supported");
         }
-    }
-
-    private static void ConfigureAzureServiceBusTransport(
-        EndpointConfiguration configuration,
-        NServiceBusOptions nServiceBusSettings,
-        Action<TransportExtensions<AzureServiceBusTransport>>? configureTransportDelegate)
-    {
-        // this part might be totally broken
-        var transport = new AzureServiceBusTransport(nServiceBusSettings.AzureConnectionString!, TopicTopology.Default);
-        var routingSettins = new RoutingSettings<AzureServiceBusTransport>(new SettingsHolder());
-        var transportExtension = new TransportExtensions<AzureServiceBusTransport>(transport, routingSettins);
-        configuration.UseTransport(transport);
-
-        configureTransportDelegate?.Invoke(transportExtension);
-    }
-
-    private static void ConfigureLearningTransport(
-        EndpointConfiguration configuration,
-        NServiceBusOptions nServiceBusSettings,
-        Action<TransportExtensions<LearningTransport>>? configureTransportDelegate)
-    {
-        var transport = configuration.UseTransport<LearningTransport>();
-        configureTransportDelegate?.Invoke(transport);
     }
 
     private static void ConfigureSerialization(EndpointConfiguration configuration)

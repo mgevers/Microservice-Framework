@@ -15,21 +15,21 @@ namespace Common.Infrastructure.ServiceBus.MassTransit.Observers
         public Task PostPublish<T>(PublishContext<T> context)
             where T : class
         {
-            logger.LogInformation("post publish for message {publishedMessage}", context.Message);
+            logger.LogInformation("post publish for {messageType} {messageId}", typeof(T).Name, context.MessageId);
             return Task.CompletedTask;
         }
 
         public Task PrePublish<T>(PublishContext<T> context)
             where T : class
         {
-            logger.LogInformation("pre publish for message {publishedMessage}", context.Message);
+            logger.LogInformation("pre publish for {messageType} {messageId}", typeof(T).Name, context.MessageId);
             return Task.CompletedTask;
         }
 
         public Task PublishFault<T>(PublishContext<T> context, Exception exception)
             where T : class
         {
-            logger.LogError("publish fault for message {publishedMessage} - {exception}", context.Message, exception);
+            logger.LogError("publish fault for {messageType} {messageId} - {exceptionType}", typeof(T).Name, context.MessageId, exception.GetType().Name);
             return Task.CompletedTask;
         }
     }

@@ -1,7 +1,6 @@
 ﻿using Common.Infrastructure.ServiceBus.NServiceBus.RequestResponse;
 using Common.Infrastructure.Tests.ServiceBus.Utilities;
 using Common.Testing.FluentTesting;
-using Common.Testing.FluentTesting.Asserts;
 using Common.Testing.Persistence;
 using CSharpFunctionalExtensions;
 using Xunit;
@@ -24,7 +23,7 @@ namespace Common.Infrastructure.Tests.ServiceBus.RequestResponse
 
         private static HandlerTestSetup<CommandHandler> Arrange(DatabaseState databaseState)
         {
-            return new HandlerTestSetup<CommandHandler>(databaseState);
+            return new HandlerTestSetup<CommandHandler>(databaseState, isReadOnlyDatabase: false);
         }
     }
 }

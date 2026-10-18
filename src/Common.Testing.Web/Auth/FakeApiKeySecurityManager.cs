@@ -1,5 +1,4 @@
 ﻿using Common.Infrastructure.Auth.ApiKey;
-using Common.Testing.Integration.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;

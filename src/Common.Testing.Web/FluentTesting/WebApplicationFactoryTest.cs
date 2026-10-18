@@ -4,6 +4,7 @@ using Common.Testing.Logging;
 using Common.Testing.Persistence;
 using Common.Testing.ServiceBus;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using System.Net.Http.Headers;
 
 namespace Common.Testing.Web.FluentTesting;
@@ -16,17 +17,19 @@ public static class WebApplicationFactoryTest
         where TFactory : WebApplicationFactory<TEntry>
         where TEntry : class
     {
-        using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
+        using (FakeLoggingDatabase.Initialize())
         using (FakeServiceBus.Initialize())
-        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.DatabaseError))
+        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
+        using (var configuredFactory = CreateConfiguredFactory(testSetup))
         {
-            testSetup.Factory.Server.PreserveExecutionContext = true;
-            var httpClient = testSetup.Factory.CreateClient();
+            var factory = configuredFactory ?? testSetup.Factory;
+            factory.Server.PreserveExecutionContext = true;
+            var httpClient = factory.CreateClient();
 
-            if (testSetup.AuthToken != null)
+            if (testSetup.Jwt != null)
             {
                 httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", testSetup.AuthToken);
+                    new AuthenticationHeaderValue("Bearer", testSetup.Jwt);
             }
             else if (testSetup.ApiKey != null)
             {
@@ -41,5 +44,17 @@ public static class WebApplicationFactoryTest
                 FakeLoggingDatabase.Logs,
                 response);
         }
+    }
+
+    private static WebApplicationFactory<TEntry>? CreateConfiguredFactory<TFactory, TEntry>(
+        ApiTestSetup<TFactory, TEntry> testSetup)
+        where TFactory : WebApplicationFactory<TEntry>
+        where TEntry : class
+    {
+        var configureServices = testSetup.ConfigureServices;
+
+        return configureServices == null
+            ? null
+            : testSetup.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(configureServices));
     }
 }

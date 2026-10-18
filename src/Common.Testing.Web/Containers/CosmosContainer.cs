@@ -1,4 +1,5 @@
 ﻿using Common.Infrastructure.Persistence.Cosmos;
+using DotNet.Testcontainers.Builders;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Fluent;
 using Testcontainers.CosmosDb;
@@ -10,38 +11,27 @@ public class CosmosContainer : IAsyncLifetime
 {
     public CosmosDbContainer CosmosDbContainer { get; } = new CosmosDbBuilder("mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview")
         .WithEnvironment("AZURE_COSMOS_EMULATOR_PARTITION_COUNT", "10")
-        .WithEnvironment("AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE", "127.0.0.1")
-        .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE", "false")
-        .WithPortBinding(8081, 8081)
+        .WithCommand("--enable-explorer", "true")
+        .WithWaitStrategy(Wait
+            .ForUnixContainer()
+            .UntilInternalTcpPortIsAvailable(8081)
+            .UntilMessageIsLogged("System is now fully ready to accept requests")
+        )
         .Build();
 
-    private CosmosClient? _cosmosClient;
+    public CosmosClient CosmosClient => new CosmosClientBuilder(CosmosDbContainer.GetConnectionString())
+            .WithCustomSerializer(new CosmosDbSerializer())
+            .WithHttpClientFactory(() => CosmosDbContainer.HttpClient)
+            .WithConnectionModeGateway()
+            .Build();
 
-    public CosmosClient CosmosClient
+    public Task DisposeAsync()
     {
-        get
-        {
-            if (_cosmosClient == null)
-            {
-                _cosmosClient = new CosmosClientBuilder(CosmosDbContainer.GetConnectionString())
-                    .WithCustomSerializer(new CosmosDbSerializer())
-                    .WithConnectionModeGateway()
-                    .WithRequestTimeout(TimeSpan.FromSeconds(120))
-                    .WithThrottlingRetryOptions(TimeSpan.FromSeconds(10), 10)
-                    .Build();
-            }
-            return _cosmosClient;
-        }
+        return CosmosDbContainer.StopAsync();
     }
 
-    public async ValueTask InitializeAsync()
+    public Task InitializeAsync()
     {
-        await CosmosDbContainer.StartAsync();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        _cosmosClient?.Dispose();
-        await CosmosDbContainer.StopAsync();
+        return CosmosDbContainer.StartAsync();
     }
 }

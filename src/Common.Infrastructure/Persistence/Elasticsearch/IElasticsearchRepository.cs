@@ -1,5 +1,4 @@
 ﻿using Ardalis.Result;
-using Common.LanguageExtensions.Contracts;
 using Elastic.Clients.Elasticsearch;
 using A = Ardalis.Result;
 

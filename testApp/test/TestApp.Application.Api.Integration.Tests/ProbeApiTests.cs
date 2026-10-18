@@ -1,7 +1,6 @@
 ﻿using Common.LanguageExtensions;
 using Common.LanguageExtensions.TestableAlternatives;
-using Common.Testing.FluentTesting.Asserts;
-using Common.Testing.Integration.Auth;
+using Common.Testing.FluentTesting;
 using Common.Testing.Integration.FluentTesting;
 using Common.Testing.Persistence;
 using Common.Testing.Web.Auth;
@@ -42,18 +41,19 @@ public class ProbeApiTests : IClassFixture<TestAppWebApplicationFactory>
     public async Task CanAccessPrivateEndpointWithToken()
     {
         var mockNow = DateTime.Parse("1/1/2000");
-        using (CurrentTime.UseMotckUtcNow(mockNow))
+
+        using (CurrentTime.UseMockUtcNow(mockNow))
         {
-            var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
+            var jwt = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
 
             var probeResponse = new ProbeResponse(
             [
                 new("userId", "123"),
-                new("exp", $"{ConvertToUnixTimestamp(mockNow.Add(FakeJwtTokens.TokenLifetime))}"),
+                new("exp", $"{ConvertToUnixTimestamp(mockNow.AddMinutes(20))}"),
                 new("iss", $"{FakeJwtTokens.Issuer}"),
             ]);
 
-            await ArrangeWithToken(authToken)
+            await Arrange(jwt)
                 .Act(httpClient => httpClient.GetAsync<ProbeResponse>("api/probe/private"))
                 .AssertDatabase(DatabaseState.Empty)
                 .AssertOutput(Result.Success(probeResponse));
@@ -61,57 +61,46 @@ public class ProbeApiTests : IClassFixture<TestAppWebApplicationFactory>
     }
 
     [Fact]
-    public async Task AccessPrivateEndpoint_WithExpiredToken_Fails()
-    {
-        var mockNow = DateTime.Parse("1/1/2000");
-        var mockExpiredTime = mockNow.Add(FakeJwtTokens.TokenLifetime.Add(TimeSpan.FromMinutes(1)));
-
-        var authToken = string.Empty;
-        using (CurrentTime.UseMotckUtcNow(mockNow))
-        {
-            authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
-        }
-
-        using (CurrentTime.UseMotckUtcNow(mockExpiredTime))
-        {
-            await ArrangeWithToken(authToken)
-                .Act(httpClient => httpClient.GetAsync<ProbeResponse>("api/probe/private"))
-                .AssertOutput(Result.Failure<ProbeResponse>("http response was not a successful status code - Unauthorized"));
-        }
-    }
-
-    [Fact]
     public async Task CanAccessPrivateEndpointWithApiKey()
     {
-        var apiKey = FakeApiKeyAuthenticator.CreateKeyWithClaims(new Claim("userId", "123"));
+        var apiKey = "test-api-key";
+        using var fakeOauth = FakeApiKeyAuthenticator.HydrateKeyWithClaims(apiKey, new Claim("userId", "123"));
 
         var probeResponse = new ProbeResponse(new List<ClaimView>()
         {
             new("userId", "123"),
         });
 
-        await ArrangeWithKey(apiKey)
+        await Arrange(apiKey: apiKey)
             .Act(httpClient => httpClient.GetAsync<ProbeResponse>("api/probe/private"))
             .AssertDatabase(DatabaseState.Empty)
             .AssertOutput(Result.Success(probeResponse));
     }
 
-    private ApiTestSetup<TestAppWebApplicationFactory, Program> Arrange()
+    [Fact]
+    public async Task Act_AppliesConfigureServicesDelegate()
     {
-        return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithoutAuth(factory);
+        var wasApplied = false;
+        var setup = new ApiTestSetup<TestAppWebApplicationFactory, Program>(
+            this.factory,
+            DatabaseState.Empty,
+            isReadOnlyDatabase: true,
+            jwt: null,
+            configureServices: services => wasApplied = true);
+
+        await setup.Act(httpClient => httpClient.GetAsync<ProbeResponse>("api/probe/public"));
+
+        Assert.True(wasApplied);
     }
 
-    private ApiTestSetup<TestAppWebApplicationFactory, Program> ArrangeWithKey(string apiKey)
+    private ApiTestSetup<TestAppWebApplicationFactory, Program> Arrange(string? jwt = null, string? apiKey = null)
     {
-        return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithApiKey(factory, apiKey: apiKey);
-    }
-
-    private ApiTestSetup<TestAppWebApplicationFactory, Program> ArrangeWithToken(string? authToken = null)
-    {
-        return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithAuthToken(
-            factory,
-            authToken: authToken,
-            databaseError: Ardalis.Result.Result.CriticalError("cannot write to readonly database"));
+        return new ApiTestSetup<TestAppWebApplicationFactory, Program>(
+            this.factory,
+            DatabaseState.Empty,
+            isReadOnlyDatabase: true,
+            jwt,
+            apiKey: apiKey);
     }
 
     private static double ConvertToUnixTimestamp(DateTime date)

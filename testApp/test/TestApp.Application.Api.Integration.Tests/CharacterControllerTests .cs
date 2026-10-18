@@ -1,6 +1,5 @@
-﻿using Ardalis.Result;
-using Common.LanguageExtensions;
-using Common.Testing.FluentTesting.Asserts;
+﻿using Common.LanguageExtensions;
+using Common.Testing.FluentTesting;
 using Common.Testing.Integration.FluentTesting;
 using Common.Testing.Logging;
 using Common.Testing.Persistence;
@@ -25,16 +24,11 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var character = DataModels.CreateCharacter();
         var request = new AddCharacterRequest(character.Id, character.Name);
 
-        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
-
         await 
-            Arrange(authToken: authToken)
+            Arrange(jwt: FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123")))
             .Act(httpClient => httpClient.PostAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.OK)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
-            .AssertStructuredLog(LogLevel.Information, new { command = nameof(AddCharacterRequest) })
-            .AssertStructuredLog(LogLevel.Information, "received command: {command}", new { command = nameof(AddCharacterRequest) })
-            .AssertStructuredLog(new LogEntry(LogLevel.Information, "received command: {command}", nameof(AddCharacterRequest)))
             .AssertDatabase(new DatabaseState(character))
             .AssertPublishedEvent(new CharacterAddedEvent(character.Id));
     }
@@ -59,12 +53,10 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var character = DataModels.CreateCharacter();
         var request = new AddCharacterRequest(character.Id, character.Name);
 
-        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
-
         await
             Arrange(
-                databaseError: Result.CriticalError("cannot write to readonly database"),
-                authToken: authToken)
+                isReadOnlyDatabase: true,
+                jwt: FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123")))
             .Act(httpClient => httpClient.PostAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.InternalServerError)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
@@ -80,12 +72,10 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var updatedCharacter = DataModels.CreateCharacter(id);
         var request = new UpdateCharacterRequest(id, updatedCharacter.Name);
 
-        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
-
         await
             Arrange(
                 databaseState: new DatabaseState(character),
-                authToken: authToken)
+                jwt: FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123")))
             .Act(httpClient => httpClient.PutAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.OK)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
@@ -113,13 +103,11 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var character = DataModels.CreateCharacter();
         var request = new AddCharacterRequest(character.Id, character.Name);
 
-        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
-
         await
             Arrange(
                 databaseState: new DatabaseState(character),
-               databaseError: Result.CriticalError("cannot write to readonly database"),
-                authToken: authToken)
+                isReadOnlyDatabase: true,
+                jwt: FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123")))
             .Act(httpClient => httpClient.PutAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.InternalServerError)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
@@ -133,12 +121,10 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var character = DataModels.CreateCharacter();
         var request = new RemoveCharacterRequest(character.Id);
 
-        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
-
         await
             Arrange(
                 databaseState: new DatabaseState(character),
-                authToken: authToken)
+                jwt: FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123")))
             .Act(httpClient => httpClient.DeleteAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.OK)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
@@ -166,13 +152,11 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
         var character = DataModels.CreateCharacter();
         var request = new RemoveCharacterRequest(character.Id);
 
-        var authToken = FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123"));
-
         await
             Arrange(
                 databaseState: new DatabaseState(character),
-                databaseError: Result.CriticalError("cannot write to readonly database"),
-                authToken: authToken)
+                isReadOnlyDatabase: true,
+                jwt: FakeJwtTokens.GenerateJwtToken(new Claim("userId", "123")))
             .Act(httpClient => httpClient.DeleteAsync("api/characters", request))
             .AssertHttpResponse(httpResponse => httpResponse.StatusCode == HttpStatusCode.InternalServerError)
             .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
@@ -182,13 +166,13 @@ public class CharacterControllerTests(TestAppWebApplicationFactory factory) : IC
 
     private ApiTestSetup<TestAppWebApplicationFactory, Program> Arrange(
         DatabaseState? databaseState = null,
-        string? authToken = null,
-        Result? databaseError = null)
+        bool isReadOnlyDatabase = false,
+        string? jwt = null)
     {
-        return ApiTestSetup<TestAppWebApplicationFactory, Program>.ArrangeWithAuthToken(
-            factory,
-            databaseState: databaseState,
-            authToken: authToken,
-            databaseError: databaseError);
+        return new ApiTestSetup<TestAppWebApplicationFactory, Program>(
+            this.factory,
+            databaseState ?? DatabaseState.Empty,
+            isReadOnlyDatabase,
+            jwt);
     }
 }

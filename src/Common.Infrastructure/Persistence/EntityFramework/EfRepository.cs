@@ -1,5 +1,4 @@
 ﻿using Ardalis.Result;
-using Common.LanguageExtensions.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Common.Infrastructure.Persistence.EntityFramework;
@@ -18,6 +17,7 @@ public class EFRepository<TEntity, TDbContext> : IRepository<TEntity>
     public async virtual Task<Result<IReadOnlyList<TEntity>>> LoadAll(int count = 1_000, CancellationToken cancellationToken = default)
     {
         var entities = await this.dbContext.Set<TEntity>()
+            .Take(count)
             .ToListAsync(cancellationToken);
 
         return entities == null || entities.Count == 0

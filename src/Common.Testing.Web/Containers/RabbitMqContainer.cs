@@ -7,19 +7,19 @@ namespace Common.Testing.Integration.Containers;
 
 public class RabbitMqContainer : IAsyncLifetime
 {
-    public Testcontainers.RabbitMq.RabbitMqContainer Container { get; } = new RabbitMqBuilder("rabbitmq:3.11")
+    public Testcontainers.RabbitMq.RabbitMqContainer Container { get; } = new RabbitMqBuilder("rabbitmq:3.13")
         .WithUsername("guest")
         .WithPassword("guest")
         .Build();
 
-    public async ValueTask InitializeAsync()
+    public Task InitializeAsync()
     {
-        await Container.StartAsync();
+        return Container.StartAsync();
     }
 
-    public async ValueTask DisposeAsync()
+    public Task DisposeAsync()
     {
-        await Container.StopAsync();
+        return Container.StopAsync();
     }
 
     public RabbitMqTransportOptions GetOptions()

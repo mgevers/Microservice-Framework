@@ -12,36 +12,33 @@ public static class OpenTelemetryHostApplicationBuilderExtensions
 {
     public static IHostApplicationBuilder ConfigureOpenTelemetry(this IHostApplicationBuilder builder, string serviceName)
     {
-        var resourceBuilder = ResourceBuilder.CreateDefault()
-            .AddService(serviceName, serviceInstanceId: Environment.MachineName)
-            .AddTelemetrySdk()
-            .AddEnvironmentVariableDetector();
-
-        var excludedPaths = new[] { "/health", "/metrics", "/swagger" };
+        builder.Logging.AddOpenTelemetry(config =>
+        {
+            config.IncludeScopes = true;
+            config.IncludeFormattedMessage = true;
+        });
 
         builder.Services
             .AddOpenTelemetry()
             .WithMetrics(meterBuilder => {
-                meterBuilder
-                    .SetResourceBuilder(resourceBuilder)
-                    .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation();
+                meterBuilder.AddAspNetCoreInstrumentation();
+                meterBuilder.AddHttpClientInstrumentation();
             })
             .WithTracing(tracingBuilder =>
             {
+                var resourceBuilder = ResourceBuilder.CreateDefault()
+                    .AddService(serviceName)
+                    .AddTelemetrySdk()
+                    .AddEnvironmentVariableDetector();
+
                 tracingBuilder
                     .SetResourceBuilder(resourceBuilder)
                     .AddSource("MassTransit")
                     .AddAspNetCoreInstrumentation(options =>
                     {
-                        options.Filter = httpContext =>
-                        {
-                            var path = httpContext.Request.Path.Value;
-                            return !excludedPaths.Any(excludedPath =>
-                            {
-                                return path?.StartsWith(excludedPath, StringComparison.OrdinalIgnoreCase) == true;
-                            });
-                        };
+                        // The path can hold sensitive values, so traces get the route template instead.
+                        options.EnrichWithHttpResponse = (activity, response) =>
+                            activity.SetTag("url.path", WebApi.RouteTemplate(response.HttpContext));
                     })
                     .AddHttpClientInstrumentation()
                     .AddEntityFrameworkCoreInstrumentation();

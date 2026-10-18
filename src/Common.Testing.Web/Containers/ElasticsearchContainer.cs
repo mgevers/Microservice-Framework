@@ -7,7 +7,7 @@ namespace Common.Testing.Integration.Containers;
 
 public class ElasticsearchContainer : IAsyncLifetime
 {
-    public Testcontainers.Elasticsearch.ElasticsearchContainer Container { get; } = new ElasticsearchBuilder("elasticsearch:9.3.1")
+    public Testcontainers.Elasticsearch.ElasticsearchContainer Container { get; } = new ElasticsearchBuilder("elasticsearch:9.5.5")
         .WithPortBinding(9200, true)
         .WithEnvironment("discovery.type", "single-node")
         .WithEnvironment("xpack.security.enabled", "false")
@@ -16,14 +16,14 @@ public class ElasticsearchContainer : IAsyncLifetime
 
     public ElasticsearchClient ElasticsearchClient => GetElasticsearchClient();
 
-    public async ValueTask InitializeAsync()
+    public Task InitializeAsync()
     {
-        await Container.StartAsync();
+        return Container.StartAsync();
     }
 
-    public async ValueTask DisposeAsync()
+    public Task DisposeAsync()
     {
-        await Container.StopAsync();
+        return Container.StopAsync();
     }
 
     private ElasticsearchClient GetElasticsearchClient()

@@ -1,5 +1,4 @@
-﻿using Common.LanguageExtensions.Utilities;
-using Common.Testing.Persistence;
+﻿using Common.Testing.Persistence;
 using CSharpFunctionalExtensions;
 using NServiceBus.Testing;
 using System.Linq.Expressions;
@@ -81,8 +80,9 @@ public static class AssertExtensions
             var expectedEntities = expected.GetEntities(entityType);
             var actualEntities = actual.GetEntities(entityType);
 
-            expectedEntities = expectedEntities.OrderBy(entity => entity.GetHashCode()).ToList();
-            actualEntities = actualEntities.OrderBy(entity => entity.GetHashCode()).ToList();
+            // Order by content, so that equal states pair the same entities. The hash code of an object that does not override it differs on every run.
+            expectedEntities = expectedEntities.OrderBy(entity => DeepEqualSerializer.SerializeObject(entity, null), StringComparer.Ordinal).ToList();
+            actualEntities = actualEntities.OrderBy(entity => DeepEqualSerializer.SerializeObject(entity, null), StringComparer.Ordinal).ToList();
 
             if (expectedEntities.Count != actualEntities.Count)
             {

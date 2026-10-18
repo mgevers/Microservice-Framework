@@ -1,5 +1,4 @@
-﻿using Common.LanguageExtensions.Contracts;
-using CSharpFunctionalExtensions;
+﻿using CSharpFunctionalExtensions;
 
 namespace Common.Infrastructure.Persistence;
 
@@ -10,6 +9,4 @@ public class DataModel : Entity<Guid>, IDataModel
 
     public DataModel()
         : base() { }
-
-    public object GetId() => Id;
 }

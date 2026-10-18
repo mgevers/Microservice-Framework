@@ -1,5 +1,4 @@
-﻿using Common.Testing.Logging;
-using Common.Testing.Persistence;
+﻿using Common.Testing.Persistence;
 using Common.Testing.ServiceBus;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,10 +23,11 @@ public static class MassTransitMessageHandlerTest
             .Returns(request);
         mocker.Use(consumeContextMock);
 
-        using (FakeLoggingDatabase.Initialize(testSetup.LoggingConfiguration))
-        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.DatabaseError))
+        using (FakeDatabase.SeedData(testSetup.DatabaseState, testSetup.IsReadOnlyDatabase))
         {
-            var handler = mocker.GetRequiredService<TMessageHandler>();
+            // CreateInstance builds the real handler. GetRequiredService would return a proxy, and a proxy answers
+            // an overridden (virtual) method with a default value instead of running it.
+            var handler = mocker.CreateInstance<TMessageHandler>();
 
             try
             {
@@ -36,8 +36,7 @@ public static class MassTransitMessageHandlerTest
                 return new MessageHandlerTestResult<TMessageHandler>(
                     FakeDatabase.DatabaseState,
                     GetServiceBusState<TMessage>(mocker),
-                    mocker,
-                    FakeLoggingDatabase.Logs.ToList());
+                    mocker);
             }
             catch (Exception ex)
             {
@@ -45,7 +44,6 @@ public static class MassTransitMessageHandlerTest
                     FakeDatabase.DatabaseState,
                     GetServiceBusState<TMessage>(mocker),
                     mocker,
-                    FakeLoggingDatabase.Logs.ToList(),
                     ex);
             }
         }        

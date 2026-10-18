@@ -1,40 +1,12 @@
 ﻿using Ardalis.Result;
-using Common.LanguageExtensions.Contracts;
-using Common.LanguageExtensions.Utilities.ResultExtensions;
-using MassTransit;
+using Common.Infrastructure.Persistence;
+using Common.LanguageExtensions.Utilities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using TestApp.Core.Boundary;
 using TestApp.Core.Domain;
 
 namespace TestApp.Core.CommandHandlers;
-
-public class UpdateCharacterConsumer : IConsumer<UpdateCharacterCommand>
-{
-    private readonly IRepository<Character> repository;
-    private readonly ILogger<UpdateCharacterConsumer> logger;
-
-    public UpdateCharacterConsumer(IRepository<Character> repository, ILogger<UpdateCharacterConsumer> logger)
-    {
-        this.repository = repository;
-        this.logger = logger;
-    }
-
-    public async Task Consume(ConsumeContext<UpdateCharacterCommand> context)
-    {
-        logger.LogInformation($"received command: {nameof(UpdateCharacterCommand)}");
-
-        await repository.LoadById(context.Message.CharacterId, context.CancellationToken)
-            .Bind(async character =>
-            {
-                character.Name = context.Message.Name;
-                var result = await repository.Update(character, context.CancellationToken);
-
-                return result.AsResult();
-            })
-            .Tap(() => context.Publish(new CharacterUpdatedEvent(context.Message.CharacterId)));
-    }
-}
 
 public class UpdateCharacterCommandHandler : IHandleMessages<UpdateCharacterCommand>
 {
@@ -50,7 +22,6 @@ public class UpdateCharacterCommandHandler : IHandleMessages<UpdateCharacterComm
     public async Task Handle(UpdateCharacterCommand message, IMessageHandlerContext context)
     {
         logger.LogInformation($"received command: {nameof(UpdateCharacterCommand)}");
-
         await repository.LoadById(message.CharacterId, context.CancellationToken)
             .Bind(async character =>
             {

@@ -1,7 +1,6 @@
 ﻿using Ardalis.Result;
-using Common.LanguageExtensions.Contracts;
+using Common.Infrastructure.Persistence;
 using Common.Testing.FluentTesting;
-using Common.Testing.FluentTesting.Asserts;
 using Common.Testing.Logging;
 using Common.Testing.Persistence;
 using Microsoft.Extensions.Logging;
@@ -24,7 +23,7 @@ public class CharacterRequestHandlerTests
         await Arrange<AddCharacterRequestHandler>(DatabaseState.Empty)
             .Handle(new AddCharacterRequest(character.Id, character.Name))
             .AssertOutput(Result.Success())
-            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
+            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertPublishedEvent(new CharacterAddedEvent(character.Id));
     }
@@ -33,14 +32,13 @@ public class CharacterRequestHandlerTests
     public async Task CreateCharacter_WhenDatabaseLocked_ReturnsFailure()
     {
         var character = DataModels.CreateCharacter();
-        var dbError = Result.CriticalError("cannot write to readonly database");
 
         await Arrange<AddCharacterRequestHandler>(
                 databaseState: DatabaseState.Empty, 
-                databaseError: dbError)
+                isReadOnlyDatabase: true)
             .Handle(new AddCharacterRequest(character.Id, character.Name))
-            .AssertOutput(dbError)
-            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
+            .AssertOutput(Result.CriticalError("cannot write to readonly database"))
+            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(AddCharacterRequest)}"))
             .AssertDatabase(DatabaseState.Empty)
             .AssertNoPublishedEvents();
     }
@@ -55,7 +53,7 @@ public class CharacterRequestHandlerTests
         await Arrange<UpdateCharacterRequestHandler>(new DatabaseState(character))
             .Handle(new UpdateCharacterRequest(id, updatedCharacter.Name))
             .AssertOutput(Result.Success())
-            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
+            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
             .AssertDatabase(new DatabaseState(updatedCharacter))
             .AssertPublishedEvent(new CharacterUpdatedEvent(id));
     }
@@ -64,14 +62,13 @@ public class CharacterRequestHandlerTests
     public async Task UpdateCharacter_WhenDatabaseLocked_ReturnsFailure()
     {
         var character = DataModels.CreateCharacter();
-        var dbError = Result.CriticalError("cannot write to readonly database");
 
         await Arrange<UpdateCharacterRequestHandler>(
                 databaseState: new DatabaseState(character),
-                databaseError: dbError)
+                isReadOnlyDatabase: true)
             .Handle(new UpdateCharacterRequest(character.Id, "new name"))
-            .AssertOutput(dbError)
-            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
+            .AssertOutput(Result.CriticalError("cannot write to readonly database"))
+            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(UpdateCharacterRequest)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertNoPublishedEvents();
     }
@@ -84,7 +81,7 @@ public class CharacterRequestHandlerTests
         await Arrange<RemoveCharacterRequestHandler>(new DatabaseState(character))
             .Handle(new RemoveCharacterRequest(character.Id))
             .AssertOutput(Result.Success())
-            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
+            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
             .AssertDatabase(DatabaseState.Empty)
             .AssertPublishedEvent(new CharacterRemovedEvent(character.Id));
     }
@@ -93,28 +90,24 @@ public class CharacterRequestHandlerTests
     public async Task RemoveCharacter_WhenDatabaseLocked_ReturnsFailure()
     {
         var character = DataModels.CreateCharacter();
-        var dbError = Result.CriticalError("cannot write to readonly database");
 
         await Arrange<RemoveCharacterRequestHandler>(
                 databaseState: new DatabaseState(character),
-                databaseError: dbError)
+                isReadOnlyDatabase: true)
             .Handle(new RemoveCharacterRequest(character.Id))
-            .AssertOutput(dbError)
-            .AssertLog(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
+            .AssertOutput(Result.CriticalError("cannot write to readonly database"))
+            .AssertLogs(new LogEntry(LogLevel.Information, $"received command: {nameof(RemoveCharacterRequest)}"))
             .AssertDatabase(new DatabaseState(character))
             .AssertNoPublishedEvents();
     }
 
-    private static HandlerTestSetup<THandler> Arrange<THandler>(DatabaseState databaseState, Result? databaseError = null)
+    private static HandlerTestSetup<THandler> Arrange<THandler>(DatabaseState databaseState, bool isReadOnlyDatabase = false)
     {
-        return new HandlerTestSetup<THandler>(databaseState, databaseError, configureMocker: ConfigureMocker);
+        return new HandlerTestSetup<THandler>(databaseState, isReadOnlyDatabase, ConfigureMocker);
     }
 
     private static void ConfigureMocker(AutoMocker mocker)
     {
         mocker.Use<IRepository<Character>>(new FakeRepository<Character>());
-        mocker.Use<ILogger<AddCharacterRequestHandler>>(new FakeLogger<AddCharacterRequestHandler>(nameof(AddCharacterRequestHandler)));
-        mocker.Use<ILogger<RemoveCharacterRequestHandler>>(new FakeLogger<RemoveCharacterRequestHandler>(nameof(RemoveCharacterRequestHandler)));
-        mocker.Use<ILogger<UpdateCharacterRequestHandler>>(new FakeLogger<UpdateCharacterRequestHandler>(nameof(UpdateCharacterRequestHandler)));
     }
 }

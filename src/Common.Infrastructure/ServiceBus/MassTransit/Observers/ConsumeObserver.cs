@@ -14,19 +14,19 @@ namespace Common.Infrastructure.ServiceBus.MassTransit.Observers
 
         public Task PreConsume<T>(ConsumeContext<T> context) where T : class
         {
-            logger.LogInformation("pre consume for message {consumedMessage}", context.Message);
+            logger.LogInformation("pre consume for {messageType} {messageId}", typeof(T).Name, context.MessageId);
             return Task.CompletedTask;
         }
 
         public Task PostConsume<T>(ConsumeContext<T> context) where T : class
         {
-            logger.LogInformation("post consume for message {consumedMessage}", context.Message);
+            logger.LogInformation("post consume for {messageType} {messageId}", typeof(T).Name, context.MessageId);
             return Task.CompletedTask;
         }
 
         public Task ConsumeFault<T>(ConsumeContext<T> context, Exception exception) where T : class
         {
-            logger.LogError("consume fault for message {consumedMessage} - {exception}", context.Message, exception);
+            logger.LogError("consume fault for {messageType} {messageId} - {exceptionType}", typeof(T).Name, context.MessageId, exception.GetType().Name);
             return Task.CompletedTask;
         }
     }

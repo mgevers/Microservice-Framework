@@ -1,5 +1,4 @@
 ﻿using Ardalis.Result;
-using Common.LanguageExtensions.Contracts;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using Polly;
@@ -14,13 +13,13 @@ public class CosmosRepository<T> : IRepository<T>
 {
     private readonly Container container;
 
-    private readonly Policy _retryPolicy = Policy.Handle<CosmosException>(ex =>
-        (ex.StatusCode != HttpStatusCode.Conflict) || ex.StatusCode != HttpStatusCode.NotFound)
-        .WaitAndRetry(retryCount: 4, sleepDurationProvider: _ => TimeSpan.FromMilliseconds(250));
+    private readonly AsyncPolicy _retryPolicy = Policy.Handle<CosmosException>(ex =>
+        (ex.StatusCode != HttpStatusCode.Conflict) && ex.StatusCode != HttpStatusCode.NotFound)
+        .WaitAndRetryAsync(retryCount: 4, sleepDurationProvider: _ => TimeSpan.FromMilliseconds(250));
 
-    private readonly Policy _circuitBreakerPolicy = Policy.Handle<CosmosException>(ex =>
-        (ex.StatusCode != HttpStatusCode.Conflict) || ex.StatusCode != HttpStatusCode.NotFound)
-        .CircuitBreaker(exceptionsAllowedBeforeBreaking: 3, durationOfBreak: TimeSpan.FromSeconds(3));
+    private readonly AsyncPolicy _circuitBreakerPolicy = Policy.Handle<CosmosException>(ex =>
+        (ex.StatusCode != HttpStatusCode.Conflict) && ex.StatusCode != HttpStatusCode.NotFound)
+        .CircuitBreakerAsync(exceptionsAllowedBeforeBreaking: 3, durationOfBreak: TimeSpan.FromSeconds(3));
 
     public CosmosRepository(Container container)
     {
@@ -32,7 +31,7 @@ public class CosmosRepository<T> : IRepository<T>
         var options = new QueryRequestOptions();
         options.MaxItemCount = count;
 
-        return Query(options, cancellationToken: cancellationToken);
+        return QueryItems(options, filter: null, maxItems: count, cancellationToken);
     }
 
     public async Task<Result<T>> LoadById(Guid id, CancellationToken cancellationToken = default)
@@ -56,10 +55,19 @@ public class CosmosRepository<T> : IRepository<T>
         return Query(filter: entity => ids.Contains(entity.Id), cancellationToken: cancellationToken);
     }
 
-    public async virtual Task<Result<IReadOnlyList<T>>> Query(
+    public virtual Task<Result<IReadOnlyList<T>>> Query(
         QueryRequestOptions? requestOptions = null,
         Expression<Func<T, bool>>? filter = null,
         CancellationToken cancellationToken = default)
+    {
+        return QueryItems(requestOptions, filter, maxItems: null, cancellationToken);
+    }
+
+    private async Task<Result<IReadOnlyList<T>>> QueryItems(
+        QueryRequestOptions? requestOptions,
+        Expression<Func<T, bool>>? filter,
+        int? maxItems,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -82,13 +90,13 @@ public class CosmosRepository<T> : IRepository<T>
             var iterator = query.ToFeedIterator();
 
             var items = new List<T>();
-            if (iterator.HasMoreResults)
+            while (iterator.HasMoreResults && (maxItems == null || items.Count < maxItems))
             {
                 var response = await ExecuteWithRetry(() => iterator.ReadNextAsync(cancellationToken));
                 items.AddRange(response.ToList());
             }
 
-            return items;
+            return maxItems == null ? items : items.Take(maxItems.Value).ToList();
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
@@ -153,9 +161,9 @@ public class CosmosRepository<T> : IRepository<T>
 
     private Task<TRet> ExecuteWithRetry<TRet>(Func<Task<TRet>> func)
     {
-        return _circuitBreakerPolicy.Execute(() =>
+        return _circuitBreakerPolicy.ExecuteAsync(() =>
         {
-            return _retryPolicy.Execute(func);
+            return _retryPolicy.ExecuteAsync(func);
         });
     }
 }
