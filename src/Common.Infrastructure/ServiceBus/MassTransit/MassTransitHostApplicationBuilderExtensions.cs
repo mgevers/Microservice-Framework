@@ -28,7 +28,7 @@ public static class MassTransitHostApplicationBuilderExtensions
                 config.SetInMemorySagaRepositoryProvider();
                 config.SetKebabCaseEndpointNameFormatter();
 
-                ConfigureOutbox<TDbContext>(config, outboxConfig);
+                config.AddOutbox<TDbContext>(outboxConfig);
 
                 ConfigureRabbitMq(config, messageEncryptionKey);
                 configureBus?.Invoke(config);
@@ -93,8 +93,12 @@ public static class MassTransitHostApplicationBuilderExtensions
         });
     }
 
-    private static void ConfigureOutbox<TDbContext>(
-        IBusRegistrationConfigurator config,
+    /// <summary>
+    /// Adds the Entity Framework outbox of the context to the bus. A host with several contexts calls this once per
+    /// context, from <c>configureBus</c>, and turns <see cref="OutboxOptions.EnableSchemaCaching"/> off.
+    /// </summary>
+    public static void AddOutbox<TDbContext>(
+        this IBusRegistrationConfigurator config,
         Action<OutboxOptions> outboxConfig)
         where TDbContext : DbContext
     {
@@ -105,14 +109,17 @@ public static class MassTransitHostApplicationBuilderExtensions
         {
             if (options.Provider == OutboxDatabaseProvider.PostgreSql)
             {
-                outboxConfig.UsePostgres();
+                outboxConfig.UsePostgres(options.EnableSchemaCaching);
             }
             else
             {
                 outboxConfig.UseSqlServer();
             }
 
-            outboxConfig.UseBusOutbox();
+            if (options.UseBusOutbox)
+            {
+                outboxConfig.UseBusOutbox();
+            }
 
             outboxConfig.QueryDelay = TimeSpan.FromSeconds(1);
             outboxConfig.DuplicateDetectionWindow = TimeSpan.FromMinutes(options.DuplicateDetectionWindowMinutes);
