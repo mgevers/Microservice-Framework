@@ -1,6 +1,7 @@
 using Common.LanguageExtensions.TestableAlternatives;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Common.Infrastructure.Compliance;
 
@@ -60,6 +61,32 @@ public class AuditBehavior<TRequest, TResponse>(IAuditTrail audit, ICurrentActor
     {
         if (request is IAuditedRequest audited)
         {
+            await audit.Record([AuditEntry.For(actor.Id, audited.Action, audited.Subject)], cancellationToken);
+        }
+
+        return await next(cancellationToken);
+    }
+}
+
+/// <summary>Picks the key of the audit trail that records a request, from the type of the request.</summary>
+public sealed class AuditTrailKey(Func<Type, object> keyOf)
+{
+    public object For(Type request) => keyOf(request);
+}
+
+/// <summary>
+/// The same as <see cref="AuditBehavior{TRequest, TResponse}"/>, for a host with several audit trails registered by key.
+/// The trail is the one that <c>auditTrailKey</c> picks for the type of the request.
+/// </summary>
+public class KeyedAuditBehavior<TRequest, TResponse>(IServiceProvider services, ICurrentActor actor, AuditTrailKey auditTrailKey)
+    : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : notnull
+{
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    {
+        if (request is IAuditedRequest audited)
+        {
+            var audit = services.GetRequiredKeyedService<IAuditTrail>(auditTrailKey.For(typeof(TRequest)));
             await audit.Record([AuditEntry.For(actor.Id, audited.Action, audited.Subject)], cancellationToken);
         }
 

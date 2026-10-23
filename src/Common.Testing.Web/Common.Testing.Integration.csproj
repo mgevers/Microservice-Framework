@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\..\GameStats\docker\postgres\01-pg-tde.sh" Link="01-pg-tde.sh" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Containers\01-pg-tde.sh" Link="01-pg-tde.sh" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -20,6 +20,21 @@ public static class ApiExtensions
             config.AddOpenBehavior(typeof(AuditBehavior<,>));
         });
 
+    /// <summary>
+    /// MediatR for the handlers of the assemblies, with the audit behavior in front of every handler. For a host with several
+    /// audit trails registered by key: <paramref name="auditTrailKey"/> picks the key of the trail for the type of a request.
+    /// </summary>
+    public static IServiceCollection AddAuditedMediatR(this IServiceCollection services, Func<Type, object> auditTrailKey, params Assembly[] handlers)
+    {
+        services.AddSingleton(new AuditTrailKey(auditTrailKey));
+
+        return services.AddMediatR(config =>
+        {
+            config.RegisterServicesFromAssemblies(handlers);
+            config.AddOpenBehavior(typeof(KeyedAuditBehavior<,>));
+        });
+    }
+
     /// <summary>Problem details, and a 504 when the message processor does not answer a command in time.</summary>
     public static IServiceCollection AddRequestTimeoutProblemDetails(this IServiceCollection services) =>
         services
