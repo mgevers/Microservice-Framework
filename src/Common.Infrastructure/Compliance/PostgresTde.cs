@@ -22,12 +22,17 @@ public static class PostgresTde
         try
         {
             // The schema goes in as a parameter of the query, never into its text.
+            // The schema's relations are picked first, in a materialized CTE: in one query the planner calls
+            // pg_tde_is_encrypted for every relation of the database, the catalogs included, before the schema filter.
             plainRelations = await dbContext.Database
                 .SqlQuery<string>($"""
-                    select c.relname as "Value"
-                    from pg_class c
-                    join pg_namespace n on n.oid = c.relnamespace
-                    where n.nspname = {schema} and c.relkind in ('r', 'i') and not pg_tde_is_encrypted(c.oid::regclass)
+                    with relations as materialized (
+                        select c.oid, c.relname
+                        from pg_class c
+                        join pg_namespace n on n.oid = c.relnamespace
+                        where n.nspname = {schema} and c.relkind in ('r', 'i')
+                    )
+                    select relname as "Value" from relations where not pg_tde_is_encrypted(oid::regclass)
                     """)
                 .ToListAsync(cancellationToken);
         }
